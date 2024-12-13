@@ -1,9 +1,26 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "./ui/button";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   return (
     <nav className="fixed w-full z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -27,12 +44,30 @@ const Navbar = () => {
               <Link to="/about" className="nav-link">
                 About
               </Link>
-              <Link to="/login" className="nav-link">
-                Login
-              </Link>
-              <Link to="/signup" className="btn-primary">
-                Sign Up
-              </Link>
+              {user ? (
+                <>
+                  <Link to="/dashboard" className="nav-link">
+                    Dashboard
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="nav-link"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth" className="nav-link">
+                    Login
+                  </Link>
+                  <Link to="/auth" className="btn-primary">
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -73,20 +108,45 @@ const Navbar = () => {
             >
               About
             </Link>
-            <Link
-              to="/login"
-              className="block nav-link"
-              onClick={() => setIsOpen(false)}
-            >
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              className="block btn-primary w-full text-center"
-              onClick={() => setIsOpen(false)}
-            >
-              Sign Up
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="block nav-link"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start nav-link"
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  className="block nav-link"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/auth"
+                  className="block btn-primary w-full text-center"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
