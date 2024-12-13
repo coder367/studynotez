@@ -3,16 +3,31 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
+    // Listen for authentication state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
+      if (event === "SIGNED_IN") {
+        navigate("/dashboard");
+      } else if (event === "SIGNED_OUT") {
+        navigate("/");
+      }
+    });
+
+    // Check if user is already signed in
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate("/dashboard");
       }
     });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   return (
@@ -52,9 +67,22 @@ const Auth = () => {
                   },
                 },
               },
+              className: {
+                container: 'w-full',
+                button: 'w-full px-4 py-2 rounded-md',
+                message: 'text-sm text-red-500',
+              },
             }}
             providers={["google"]}
             redirectTo={`${window.location.origin}/auth/callback`}
+            onError={(error) => {
+              console.error("Auth error:", error);
+              toast({
+                variant: "destructive",
+                title: "Authentication Error",
+                description: error.message || "Failed to authenticate. Please try again.",
+              });
+            }}
           />
         </div>
       </div>
