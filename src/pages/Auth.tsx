@@ -36,8 +36,8 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-3/5 bg-primary/10">
         <div className="w-full h-full flex items-center justify-center p-12">
           <img
-            src="/placeholder.svg"
-            alt="Study illustration"
+            src="/lovable-uploads/dabb59b6-cb0f-4174-bff0-7de4be232b04.png"
+            alt="Study stress illustration"
             className="max-w-full max-h-full object-contain animate-float"
           />
         </div>
