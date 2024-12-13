@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, BookOpen, Users, Video, MessageCircle } from "lucide-react";
+import { ArrowRight, BookOpen, Users, Video, MessageCircle, Check } from "lucide-react";
 import Navbar from "../components/Navbar";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const Index = () => {
   return (
@@ -30,7 +36,7 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background/50">
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-16 heading-gradient">
             Everything You Need to Excel
@@ -48,6 +54,74 @@ const Index = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-16 heading-gradient">
+            Simple, Transparent Pricing
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pricingPlans.map((plan) => (
+              <div
+                key={plan.name}
+                className={`glass-card p-8 rounded-xl ${
+                  plan.featured ? "border-2 border-primary" : ""
+                }`}
+              >
+                {plan.featured && (
+                  <span className="bg-primary text-white px-3 py-1 rounded-full text-sm font-medium mb-4 inline-block">
+                    Most Popular
+                  </span>
+                )}
+                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                <p className="text-muted-foreground mb-4">{plan.description}</p>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <span className="text-muted-foreground">/month</span>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center">
+                      <Check className="h-5 w-5 text-primary mr-2" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to={plan.featured ? "/auth" : "/contact"}
+                  className={`w-full text-center block py-3 px-6 rounded-lg ${
+                    plan.featured
+                      ? "bg-primary text-white hover:bg-primary/90"
+                      : "border border-primary text-primary hover:bg-primary/10"
+                  } transition-colors`}
+                >
+                  {plan.featured ? "Get Started" : "Contact Sales"}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background/50">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-16 heading-gradient">
+            Frequently Asked Questions
+          </h2>
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent>{faq.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
@@ -172,6 +246,74 @@ const features = [
     title: "Chat & Connect",
     description: "Communicate with other students in real-time.",
     icon: MessageCircle,
+  },
+];
+
+const pricingPlans = [
+  {
+    name: "Basic",
+    description: "Perfect for getting started",
+    price: "0",
+    featured: false,
+    features: [
+      "Up to 5 study groups",
+      "Basic note sharing",
+      "Community support",
+      "Email support",
+    ],
+  },
+  {
+    name: "Pro",
+    description: "Best for active students",
+    price: "19",
+    featured: true,
+    features: [
+      "Unlimited study groups",
+      "Advanced note organization",
+      "Priority support",
+      "Live study sessions",
+      "AI study assistance",
+    ],
+  },
+  {
+    name: "Enterprise",
+    description: "For educational institutions",
+    price: "99",
+    featured: false,
+    features: [
+      "Custom user limits",
+      "Advanced analytics",
+      "Dedicated support",
+      "Custom integrations",
+      "SLA guarantee",
+    ],
+  },
+];
+
+const faqs = [
+  {
+    question: "How does the note-sharing feature work?",
+    answer: "Our note-sharing feature allows you to upload and share your study notes with fellow students. You can organize notes by subject, add tags, and collaborate with others in real-time.",
+  },
+  {
+    question: "Can I try StudyNotes before subscribing?",
+    answer: "Yes! Our Basic plan is free and includes essential features to help you get started. You can upgrade to Pro anytime to access advanced features.",
+  },
+  {
+    question: "How do study groups work?",
+    answer: "Study groups are virtual spaces where you can collaborate with peers. You can create or join groups, share resources, and participate in discussions.",
+  },
+  {
+    question: "Is my data secure?",
+    answer: "Yes, we take security seriously. All data is encrypted, and we follow industry best practices to protect your information.",
+  },
+  {
+    question: "Can I cancel my subscription anytime?",
+    answer: "Yes, you can cancel your subscription at any time. Your access will continue until the end of your billing period.",
+  },
+  {
+    question: "Do you offer student discounts?",
+    answer: "Yes! Students with a valid .edu email address can get 20% off the Pro plan. Contact our support team to learn more.",
   },
 ];
 
