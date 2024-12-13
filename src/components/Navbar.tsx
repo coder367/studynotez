@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
@@ -8,6 +8,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -20,6 +21,21 @@ const Navbar = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    if (location.pathname !== "/") {
+      navigate("/");
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        element?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } else {
+      const element = document.getElementById(sectionId);
+      element?.scrollIntoView({ behavior: "smooth" });
+    }
+    setIsOpen(false);
   };
 
   return (
@@ -35,15 +51,27 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-4">
-              <Link to="/features" className="nav-link">
+              <a
+                href="#features"
+                className="nav-link"
+                onClick={(e) => handleNavClick(e, "features")}
+              >
                 Features
-              </Link>
-              <Link to="/pricing" className="nav-link">
+              </a>
+              <a
+                href="#pricing"
+                className="nav-link"
+                onClick={(e) => handleNavClick(e, "pricing")}
+              >
                 Pricing
-              </Link>
-              <Link to="/about" className="nav-link">
-                About
-              </Link>
+              </a>
+              <a
+                href="#faq"
+                className="nav-link"
+                onClick={(e) => handleNavClick(e, "faq")}
+              >
+                FAQ
+              </a>
               {user ? (
                 <>
                   <Link to="/dashboard" className="nav-link">
@@ -87,27 +115,27 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link
-              to="/features"
+            <a
+              href="#features"
               className="block nav-link"
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => handleNavClick(e, "features")}
             >
               Features
-            </Link>
-            <Link
-              to="/pricing"
+            </a>
+            <a
+              href="#pricing"
               className="block nav-link"
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => handleNavClick(e, "pricing")}
             >
               Pricing
-            </Link>
-            <Link
-              to="/about"
+            </a>
+            <a
+              href="#faq"
               className="block nav-link"
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => handleNavClick(e, "faq")}
             >
-              About
-            </Link>
+              FAQ
+            </a>
             {user ? (
               <>
                 <Link
