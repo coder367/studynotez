@@ -30,7 +30,7 @@ const RecentNotes = () => {
         .from("note_activities")
         .select(`
           created_at,
-          notes:note_id (
+          notes (
             id,
             title,
             description,
