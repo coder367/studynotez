@@ -49,20 +49,22 @@ const Dashboard = () => {
         .from('notes')
         .getPublicUrl(fileName);
 
-      const { error: dbError } = await supabase
+      const { data: noteData, error: dbError } = await supabase
         .from('notes')
         .insert({
           title: file.name,
           file_url: publicUrl,
           file_type: file.type,
           user_id: user.id
-        });
+        })
+        .select()
+        .single();
 
       if (dbError) throw dbError;
 
       // Create activity record for the upload
       await supabase.from('note_activities').insert({
-        note_id: dbError?.data?.[0]?.id,
+        note_id: noteData.id,
         user_id: user.id,
         activity_type: 'upload'
       });

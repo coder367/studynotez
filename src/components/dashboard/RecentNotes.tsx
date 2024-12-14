@@ -5,11 +5,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RecentNote {
+  created_at: string;
   notes: {
     id: string;
     title: string;
   };
-  created_at: string;
 }
 
 const RecentNotes = () => {
