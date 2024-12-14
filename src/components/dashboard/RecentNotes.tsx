@@ -4,15 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Note {
+  id: string;
+  title: string;
+  description?: string;
+  subject?: string;
+  university?: string;
+}
+
 interface RecentNote {
   created_at: string;
-  notes: {
-    id: string;
-    title: string;
-    description?: string;
-    subject?: string;
-    university?: string;
-  };
+  notes: Note;
 }
 
 const RecentNotes = () => {

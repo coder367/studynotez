@@ -34,17 +34,28 @@ const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
 
     setIsUploading(true);
     try {
+      // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) {
+        throw new Error("Not authenticated");
+      }
 
       // Upload file to storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('notes')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          upsert: false,
+          contentType: file.type,
+        });
 
       if (uploadError) throw uploadError;
+
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('notes')
+        .getPublicUrl(fileName);
 
       // Create note record
       const { error: dbError } = await supabase
@@ -54,7 +65,7 @@ const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
           description: noteDetails.description,
           subject: noteDetails.subject,
           university: noteDetails.university,
-          file_url: uploadData?.path,
+          file_url: publicUrl,
           file_type: file.type,
           user_id: user.id,
         });
@@ -70,7 +81,7 @@ const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
       console.error('Error uploading note:', error);
       toast({
         title: "Error",
-        description: "Failed to upload note",
+        description: "Failed to upload note. Please try again.",
         variant: "destructive",
       });
     } finally {
