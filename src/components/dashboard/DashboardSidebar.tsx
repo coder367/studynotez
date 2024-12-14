@@ -11,42 +11,44 @@ import {
 
 const DashboardSidebar = () => {
   return (
-    <Sidebar className="border-r border-border">
+    <Sidebar className="border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent className="space-y-1">
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
-                <Link to="/dashboard/notes">
-                  <BookOpen className="h-5 w-5" />
-                  <span>Notes</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
-                <Link to="/dashboard/chat">
-                  <MessageSquare className="h-5 w-5" />
-                  <span>Chat</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
-                <Link to="/dashboard/study-room">
-                  <Users className="h-5 w-5" />
-                  <span>Study Room</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="w-full flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
-                <Link to="/dashboard/profile">
-                  <User className="h-5 w-5" />
-                  <span>Profile</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+          <SidebarGroupContent>
+            <div className="space-y-1">
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/dashboard/notes" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+                    <BookOpen className="h-5 w-5" />
+                    <span>Notes</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/dashboard/chat" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+                    <MessageSquare className="h-5 w-5" />
+                    <span>Chat</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/dashboard/study-room" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+                    <Users className="h-5 w-5" />
+                    <span>Study Room</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/dashboard/profile" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+                    <User className="h-5 w-5" />
+                    <span>Profile</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
