@@ -45,30 +45,39 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string
+          description: string | null
           file_type: string | null
           file_url: string | null
           id: string
+          subject: string | null
           title: string
+          university: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           content?: string | null
           created_at?: string
+          description?: string | null
           file_type?: string | null
           file_url?: string | null
           id?: string
+          subject?: string | null
           title: string
+          university?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           content?: string | null
           created_at?: string
+          description?: string | null
           file_type?: string | null
           file_url?: string | null
           id?: string
+          subject?: string | null
           title?: string
+          university?: string | null
           updated_at?: string
           user_id?: string
         }
