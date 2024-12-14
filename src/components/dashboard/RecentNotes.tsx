@@ -17,6 +17,10 @@ const RecentNotes = () => {
 
   useEffect(() => {
     const fetchRecentNotes = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
       const { data, error } = await supabase
         .from("note_activities")
         .select(`
@@ -27,11 +31,12 @@ const RecentNotes = () => {
           )
         `)
         .eq("activity_type", "view")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5);
 
       if (!error && data) {
-        setRecentNotes(data);
+        setRecentNotes(data as RecentNote[]);
       }
     };
 

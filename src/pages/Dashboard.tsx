@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Loader2 } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import RecentNotes from "@/components/dashboard/RecentNotes";
 import Library from "@/components/dashboard/Library";
@@ -31,6 +31,12 @@ const Dashboard = () => {
 
     setIsUploading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
@@ -49,9 +55,17 @@ const Dashboard = () => {
           title: file.name,
           file_url: publicUrl,
           file_type: file.type,
+          user_id: user.id
         });
 
       if (dbError) throw dbError;
+
+      // Create activity record for the upload
+      await supabase.from('note_activities').insert({
+        note_id: dbError?.data?.[0]?.id,
+        user_id: user.id,
+        activity_type: 'upload'
+      });
 
       toast({
         title: "Success",
