@@ -20,8 +20,8 @@ interface Note {
 
 const Notes = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [selectedUniversity, setSelectedUniversity] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
+  const [selectedUniversity, setSelectedUniversity] = useState<string | undefined>();
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ["notes", searchQuery, selectedSubject, selectedUniversity],
@@ -83,9 +83,9 @@ const Notes = () => {
             <SelectValue placeholder="Select subject" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All subjects</SelectItem>
+            <SelectItem value="all">All subjects</SelectItem>
             {subjects.map((subject) => (
-              <SelectItem key={subject} value={subject}>
+              <SelectItem key={subject} value={subject || "undefined"}>
                 {subject}
               </SelectItem>
             ))}
@@ -96,9 +96,9 @@ const Notes = () => {
             <SelectValue placeholder="Select university" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All universities</SelectItem>
+            <SelectItem value="all">All universities</SelectItem>
             {universities.map((university) => (
-              <SelectItem key={university} value={university}>
+              <SelectItem key={university} value={university || "undefined"}>
                 {university}
               </SelectItem>
             ))}
