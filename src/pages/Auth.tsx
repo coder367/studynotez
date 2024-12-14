@@ -3,7 +3,7 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -14,9 +14,15 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
       if (event === "SIGNED_IN") {
+        toast({
+          title: "Welcome!",
+          description: "Successfully signed in.",
+        });
         navigate("/dashboard");
       } else if (event === "SIGNED_OUT") {
         navigate("/");
+      } else if (event === "USER_UPDATED") {
+        console.log("User updated:", session);
       }
     });
 
@@ -28,7 +34,7 @@ const Auth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex">
@@ -75,6 +81,14 @@ const Auth = () => {
             }}
             providers={["google"]}
             redirectTo={`${window.location.origin}/auth/callback`}
+            onError={(error) => {
+              console.error("Auth error:", error);
+              toast({
+                variant: "destructive",
+                title: "Authentication Error",
+                description: error.message,
+              });
+            }}
           />
         </div>
       </div>
