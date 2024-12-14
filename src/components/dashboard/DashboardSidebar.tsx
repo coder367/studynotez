@@ -16,27 +16,27 @@ const DashboardSidebar = () => {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <SidebarMenuItem className="list-none">
                 <SidebarMenuButton asChild>
-                  <Link to="/dashboard/notes" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <BookOpen className="h-5 w-5" />
+                  <Link to="/dashboard/notes" className="flex items-center gap-3 rounded-lg px-4 py-3 text-base text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+                    <BookOpen className="h-6 w-6" />
                     <span>Notes</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem className="list-none">
                 <SidebarMenuButton asChild>
-                  <Link to="/dashboard/chat" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <MessageSquare className="h-5 w-5" />
+                  <Link to="/dashboard/chat" className="flex items-center gap-3 rounded-lg px-4 py-3 text-base text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+                    <MessageSquare className="h-6 w-6" />
                     <span>Chat</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem className="list-none">
                 <SidebarMenuButton asChild>
-                  <Link to="/dashboard/study-room" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <Users className="h-5 w-5" />
+                  <Link to="/dashboard/study-room" className="flex items-center gap-3 rounded-lg px-4 py-3 text-base text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+                    <Users className="h-6 w-6" />
                     <span>Study Room</span>
                   </Link>
                 </SidebarMenuButton>
@@ -48,8 +48,8 @@ const DashboardSidebar = () => {
       <SidebarFooter className="mt-auto border-t border-border p-2">
         <SidebarMenuItem className="list-none">
           <SidebarMenuButton asChild>
-            <Link to="/dashboard/profile" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-              <User className="h-5 w-5" />
+            <Link to="/dashboard/profile" className="flex items-center gap-3 rounded-lg px-4 py-3 text-base text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
+              <User className="h-6 w-6" />
               <span>Profile</span>
             </Link>
           </SidebarMenuButton>

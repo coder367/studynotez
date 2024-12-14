@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -52,13 +54,23 @@ const Auth = () => {
       {/* Right side auth form */}
       <div className="w-full lg:w-2/5 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight heading-gradient">
-              Welcome to StudyNotes
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Join our community of students sharing knowledge
-            </p>
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="mr-4"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight heading-gradient">
+                Welcome to StudyNotes
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Join our community of students sharing knowledge
+              </p>
+            </div>
           </div>
 
           <SupabaseAuth
@@ -77,6 +89,9 @@ const Auth = () => {
                 container: 'w-full',
                 button: 'w-full px-4 py-2 rounded-md',
                 message: 'text-sm text-red-500',
+                label: 'text-white',
+                input: 'text-white',
+                anchor: 'text-primary hover:text-primary/80',
               },
             }}
             providers={["google"]}
