@@ -12,7 +12,6 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Listen for authentication state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
       if (event === "SIGNED_IN") {
@@ -28,7 +27,6 @@ const Auth = () => {
       }
     });
 
-    // Check if user is already signed in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate("/dashboard");
@@ -40,7 +38,6 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left side image */}
       <div className="hidden lg:flex lg:w-3/5 bg-primary/10">
         <div className="w-full h-full flex items-center justify-center p-12">
           <img
@@ -51,7 +48,6 @@ const Auth = () => {
         </div>
       </div>
 
-      {/* Right side auth form */}
       <div className="w-full lg:w-2/5 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           <div className="flex items-center">
@@ -98,21 +94,23 @@ const Auth = () => {
             redirectTo={`${window.location.origin}/auth/callback`}
             localization={{
               variables: {
-                sign_in: {
-                  email_input_placeholder: "Your email address",
-                  password_input_placeholder: "Your password",
-                  email_label: "Email",
-                  password_label: "Password",
-                  button_label: "Sign in",
-                  loading_button_label: "Signing in ...",
-                },
                 sign_up: {
-                  email_input_placeholder: "Your email address",
-                  password_input_placeholder: "Your password",
+                  full_name_label: "Full Name",
+                  full_name_placeholder: "Enter your full name",
                   email_label: "Email",
                   password_label: "Password",
+                  email_input_placeholder: "Your email address",
+                  password_input_placeholder: "Your password",
                   button_label: "Sign up",
                   loading_button_label: "Signing up ...",
+                },
+                sign_in: {
+                  email_label: "Email",
+                  password_label: "Password",
+                  email_input_placeholder: "Your email address",
+                  password_input_placeholder: "Your password",
+                  button_label: "Sign in",
+                  loading_button_label: "Signing in ...",
                 },
               },
             }}
