@@ -9,6 +9,8 @@ import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import Notes from "./pages/Notes";
 import Chat from "./pages/Chat";
+import Profile from "./pages/Profile";
+import StudyRoom from "./pages/StudyRoom";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +27,8 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/notes" element={<Notes />} />
           <Route path="/dashboard/chat" element={<Chat />} />
+          <Route path="/dashboard/profile" element={<Profile />} />
+          <Route path="/dashboard/study-room" element={<StudyRoom />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
