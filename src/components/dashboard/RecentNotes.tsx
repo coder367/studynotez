@@ -9,6 +9,9 @@ interface RecentNote {
   notes: {
     id: string;
     title: string;
+    description?: string;
+    subject?: string;
+    university?: string;
   };
 }
 
@@ -27,7 +30,10 @@ const RecentNotes = () => {
           created_at,
           notes:note_id (
             id,
-            title
+            title,
+            description,
+            subject,
+            university
           )
         `)
         .eq("activity_type", "view")
@@ -60,6 +66,11 @@ const RecentNotes = () => {
                   <FileText className="h-5 w-5 text-secondary" />
                   <div>
                     <p className="font-medium">{activity.notes.title}</p>
+                    {activity.notes.subject && (
+                      <p className="text-sm text-muted-foreground">
+                        {activity.notes.subject} - {activity.notes.university || "Unknown University"}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       Viewed {new Date(activity.created_at).toLocaleString()}
                     </p>
