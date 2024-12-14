@@ -17,7 +17,7 @@ const DashboardSidebar = () => {
         <SidebarGroup>
           <SidebarGroupContent>
             <div className="space-y-1">
-              <SidebarMenuItem>
+              <SidebarMenuItem className="list-none">
                 <SidebarMenuButton asChild>
                   <Link to="/dashboard/notes" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
                     <BookOpen className="h-5 w-5" />
@@ -25,7 +25,7 @@ const DashboardSidebar = () => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
+              <SidebarMenuItem className="list-none">
                 <SidebarMenuButton asChild>
                   <Link to="/dashboard/chat" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
                     <MessageSquare className="h-5 w-5" />
@@ -33,7 +33,7 @@ const DashboardSidebar = () => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
+              <SidebarMenuItem className="list-none">
                 <SidebarMenuButton asChild>
                   <Link to="/dashboard/study-room" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
                     <Users className="h-5 w-5" />
@@ -46,7 +46,7 @@ const DashboardSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="mt-auto border-t border-border p-2">
-        <SidebarMenuItem>
+        <SidebarMenuItem className="list-none">
           <SidebarMenuButton asChild>
             <Link to="/dashboard/profile" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
               <User className="h-5 w-5" />
