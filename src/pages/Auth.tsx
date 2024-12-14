@@ -89,13 +89,21 @@ const Auth = () => {
                 container: 'w-full',
                 button: 'w-full px-4 py-2 rounded-md',
                 message: 'text-sm text-red-500',
-                label: 'text-white',
-                input: 'text-white',
+                label: 'text-foreground',
+                input: 'text-foreground',
                 anchor: 'text-primary hover:text-primary/80',
               },
             }}
             providers={["google"]}
-            redirectTo={window.location.origin + "/auth/callback"}
+            redirectTo={`${window.location.origin}/auth/callback`}
+            onError={(error) => {
+              console.error("Auth error:", error);
+              toast({
+                title: "Authentication Error",
+                description: "Invalid login credentials. Please try again.",
+                variant: "destructive",
+              });
+            }}
           />
         </div>
       </div>
