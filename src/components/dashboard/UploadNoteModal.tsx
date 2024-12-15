@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface UploadNoteModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface UploadNoteModalProps {
 
 const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [noteDetails, setNoteDetails] = useState({
     title: "",
@@ -24,20 +26,53 @@ const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
     university: "",
   });
 
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upload notes",
+          variant: "destructive",
+        });
+        navigate("/auth");
+      }
+    };
+    checkAuth();
+  }, [navigate, toast]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNoteDetails((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file) {
+      toast({
+        title: "Error",
+        description: "No file selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!noteDetails.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Title is required",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsUploading(true);
     try {
       // Get authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("Not authenticated");
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError || !session) {
+        throw new Error("Authentication required");
       }
 
       // Upload file to storage
@@ -67,7 +102,7 @@ const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
           university: noteDetails.university,
           file_url: publicUrl,
           file_type: file.type,
-          user_id: user.id,
+          user_id: session.user.id,
         });
 
       if (dbError) throw dbError;
@@ -77,11 +112,22 @@ const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
         description: "Note uploaded successfully",
       });
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading note:', error);
+      
+      if (error.message === "Authentication required") {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upload notes",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
       toast({
         title: "Error",
-        description: "Failed to upload note. Please try again.",
+        description: error.message || "Failed to upload note. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -104,6 +150,7 @@ const UploadNoteModal = ({ isOpen, onClose, file }: UploadNoteModalProps) => {
               value={noteDetails.title}
               onChange={handleInputChange}
               placeholder="Enter note title"
+              required
             />
           </div>
           <div className="grid gap-2">
