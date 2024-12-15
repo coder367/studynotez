@@ -34,6 +34,18 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  // Get current user on mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser(user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
 
   // Fetch available users for chat
   const { data: users = [] } = useQuery({
@@ -247,9 +259,9 @@ const Chat = () => {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.sender_id === supabase.auth.user()?.id ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.sender_id === currentUser ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[70%] ${msg.sender_id === supabase.auth.user()?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-lg p-3`}>
+                <div className={`max-w-[70%] ${msg.sender_id === currentUser ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-lg p-3`}>
                   <p>{msg.content}</p>
                   {msg.file_url && (
                     <div className="mt-2">
