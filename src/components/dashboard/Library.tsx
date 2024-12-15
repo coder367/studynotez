@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import ViewNoteModal from "./ViewNoteModal";
 
 interface Note {
   id: string;
@@ -12,16 +13,19 @@ interface Note {
   university: string;
   created_at: string;
   file_type?: string;
+  file_url?: string;
+  user_id: string;
 }
 
 const Library = () => {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   useEffect(() => {
     const fetchNotes = async () => {
       const { data, error } = await supabase
         .from("notes")
-        .select("id, title, description, subject, university, created_at, file_type")
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (!error && data) {
@@ -31,6 +35,16 @@ const Library = () => {
 
     fetchNotes();
   }, []);
+
+  const handleNoteClick = async (note: Note) => {
+    // Record note view activity
+    await supabase.from("note_activities").insert({
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      note_id: note.id,
+      activity_type: "view",
+    });
+    setSelectedNote(note);
+  };
 
   return (
     <Card className="h-full">
@@ -44,7 +58,8 @@ const Library = () => {
               notes.map((note) => (
                 <div
                   key={note.id}
-                  className="flex items-start gap-3 p-4 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-start gap-3 p-4 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleNoteClick(note)}
                 >
                   <FileText className="h-5 w-5 text-primary mt-1" />
                   <div>
@@ -78,6 +93,13 @@ const Library = () => {
           </div>
         </ScrollArea>
       </CardContent>
+      {selectedNote && (
+        <ViewNoteModal
+          isOpen={!!selectedNote}
+          onClose={() => setSelectedNote(null)}
+          note={selectedNote}
+        />
+      )}
     </Card>
   );
 };

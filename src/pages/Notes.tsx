@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ViewNoteModal from "@/components/dashboard/ViewNoteModal";
 
 interface Note {
   id: string;
@@ -18,6 +19,7 @@ interface Note {
   created_at: string;
   file_type?: string;
   file_url?: string;
+  user_id: string;
 }
 
 const Notes = () => {
@@ -25,6 +27,7 @@ const Notes = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string | undefined>();
   const [selectedUniversity, setSelectedUniversity] = useState<string | undefined>();
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ["notes", searchQuery, selectedSubject, selectedUniversity],
@@ -69,14 +72,23 @@ const Notes = () => {
     },
   });
 
+  const handleNoteClick = async (note: Note) => {
+    // Record note view activity
+    await supabase.from("note_activities").insert({
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      note_id: note.id,
+      activity_type: "view",
+    });
+    setSelectedNote(note);
+  };
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6">
       <div className="flex items-center gap-4 mb-6">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate("/dashboard")}
-          className="shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -124,9 +136,13 @@ const Notes = () => {
       {isLoading ? (
         <div className="text-center">Loading...</div>
       ) : notes.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {notes.map((note) => (
-            <Card key={note.id} className="p-4 hover:shadow-lg transition-shadow">
+            <Card
+              key={note.id}
+              className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleNoteClick(note)}
+            >
               <div className="flex items-start gap-3">
                 <FileText className="h-5 w-5 text-primary mt-1" />
                 <div>
@@ -151,16 +167,6 @@ const Notes = () => {
                   <p className="text-xs text-muted-foreground mt-2">
                     {new Date(note.created_at).toLocaleDateString()}
                   </p>
-                  {note.file_url && (
-                    <a
-                      href={note.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline mt-2 inline-block"
-                    >
-                      View Note
-                    </a>
-                  )}
                 </div>
               </div>
             </Card>
@@ -170,6 +176,14 @@ const Notes = () => {
         <div className="text-center text-muted-foreground py-12">
           No notes found. Try adjusting your filters or search query.
         </div>
+      )}
+
+      {selectedNote && (
+        <ViewNoteModal
+          isOpen={!!selectedNote}
+          onClose={() => setSelectedNote(null)}
+          note={selectedNote}
+        />
       )}
     </div>
   );
