@@ -49,6 +49,8 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          file_type: string | null
+          file_url: string | null
           id: string
           read_at: string | null
           receiver_id: string | null
@@ -57,6 +59,8 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          file_type?: string | null
+          file_url?: string | null
           id?: string
           read_at?: string | null
           receiver_id?: string | null
@@ -65,6 +69,8 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          file_type?: string | null
+          file_url?: string | null
           id?: string
           read_at?: string | null
           receiver_id?: string | null
@@ -202,7 +208,10 @@ export type Database = {
           bio: string | null
           created_at: string
           full_name: string | null
+          github_url: string | null
           id: string
+          linkedin_url: string | null
+          twitter_url: string | null
           updated_at: string
         }
         Insert: {
@@ -210,7 +219,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           full_name?: string | null
+          github_url?: string | null
           id: string
+          linkedin_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -218,7 +230,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           full_name?: string | null
+          github_url?: string | null
           id?: string
+          linkedin_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
         }
         Relationships: []
