@@ -53,30 +53,34 @@ const Chat = () => {
 
   // Subscribe to new messages
   useEffect(() => {
-    const { data: { user } } = supabase.auth.getSession();
-    if (!user) return;
+    const subscribeToMessages = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const channel = supabase
-      .channel('chat_messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: activeChat === "public" 
-            ? undefined 
-            : `receiver_id=eq.${user.id},sender_id=eq.${(activeChat as ChatUser)?.id}`
-        },
-        (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
-        }
-      )
-      .subscribe();
+      const channel = supabase
+        .channel('chat_messages')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: activeChat === "public" 
+              ? undefined 
+              : `receiver_id=eq.${user.id},sender_id=eq.${(activeChat as ChatUser)?.id}`
+          },
+          (payload) => {
+            setMessages(prev => [...prev, payload.new as Message]);
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
+
+    subscribeToMessages();
   }, [activeChat]);
 
   // Fetch messages when active chat changes
@@ -131,17 +135,17 @@ const Chat = () => {
 
       if (selectedFile) {
         const fileExt = selectedFile.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('messages')
-          .upload(fileName, selectedFile);
+          .upload(filePath, selectedFile);
 
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
           .from('messages')
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
 
         fileUrl = publicUrl;
         fileType = selectedFile.type;
