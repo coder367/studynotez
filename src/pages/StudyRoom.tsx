@@ -1,34 +1,99 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Video, Mic } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-interface Room {
-  id: string;
-  name: string;
-  type: "study" | "focus";
-  participants: number;
-}
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import RoomCard from "@/components/study-room/RoomCard";
 
 const StudyRoom = () => {
   const navigate = useNavigate();
-  const [rooms, setRooms] = useState<Room[]>([
-    { id: "1", name: "Math Study Group", type: "study", participants: 3 },
-    { id: "2", name: "Focus Room", type: "focus", participants: 1 },
-  ]);
+  const { toast } = useToast();
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCreateRoom = (name: string, type: "study" | "focus") => {
-    const newRoom: Room = {
-      id: Date.now().toString(),
-      name,
-      type,
-      participants: 0,
-    };
-    setRooms([...rooms, newRoom]);
+  useEffect(() => {
+    fetchRooms();
+  }, []);
+
+  const fetchRooms = async () => {
+    const { data: rooms, error } = await supabase
+      .from("study_rooms")
+      .select(`
+        *,
+        room_participants (
+          count
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch study rooms",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRooms(rooms.map(room => ({
+      ...room,
+      participants: room.room_participants[0]?.count || 0
+    })));
+  };
+
+  const handleCreateRoom = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsCreating(true);
+
+    const formData = new FormData(event.currentTarget);
+    const name = formData.get("name") as string;
+    const type = formData.get("type") as "study" | "focus";
+    const isPublic = formData.get("visibility") === "public";
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: room, error } = await supabase
+        .from("study_rooms")
+        .insert({
+          name,
+          type,
+          is_public: isPublic,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await supabase
+        .from("room_participants")
+        .insert({
+          room_id: room.id,
+          user_id: user.id,
+        });
+
+      toast({
+        title: "Success",
+        description: "Room created successfully",
+      });
+
+      fetchRooms();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create room",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -56,45 +121,43 @@ const StudyRoom = () => {
             <DialogHeader>
               <DialogTitle>Create a New Room</DialogTitle>
             </DialogHeader>
-            <form className="space-y-4" onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleCreateRoom(
-                formData.get("name") as string,
-                formData.get("type") as "study" | "focus"
-              );
-            }}>
+            <form onSubmit={handleCreateRoom} className="space-y-4">
               <div>
                 <Label htmlFor="name">Room Name</Label>
                 <Input id="name" name="name" required />
               </div>
+              
               <div className="space-y-2">
                 <Label>Room Type</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    className="h-20"
-                    onClick={() => handleCreateRoom("New Study Room", "study")}
-                  >
-                    <div className="text-center">
-                      <Video className="h-6 w-6 mx-auto mb-2" />
-                      <span>Study Room</span>
-                    </div>
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    className="h-20"
-                    onClick={() => handleCreateRoom("New Focus Room", "focus")}
-                  >
-                    <div className="text-center">
-                      <Mic className="h-6 w-6 mx-auto mb-2" />
-                      <span>Focus Room</span>
-                    </div>
-                  </Button>
-                </div>
+                <RadioGroup name="type" defaultValue="study" className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="study" id="study" />
+                    <Label htmlFor="study">Study Room (Video)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="focus" id="focus" />
+                    <Label htmlFor="focus">Focus Room (Voice)</Label>
+                  </div>
+                </RadioGroup>
               </div>
+
+              <div className="space-y-2">
+                <Label>Visibility</Label>
+                <RadioGroup name="visibility" defaultValue="private" className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="public" id="public" />
+                    <Label htmlFor="public">Public</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="private" id="private" />
+                    <Label htmlFor="private">Private</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isCreating}>
+                {isCreating ? "Creating..." : "Create Room"}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -102,22 +165,14 @@ const StudyRoom = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {rooms.map((room) => (
-          <Card key={room.id} className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-semibold">{room.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {room.participants} participant{room.participants !== 1 ? "s" : ""}
-                </p>
-              </div>
-              {room.type === "study" ? (
-                <Video className="h-5 w-5 text-primary" />
-              ) : (
-                <Mic className="h-5 w-5 text-primary" />
-              )}
-            </div>
-            <Button className="w-full">Join Room</Button>
-          </Card>
+          <RoomCard
+            key={room.id}
+            id={room.id}
+            name={room.name}
+            type={room.type}
+            participants={room.participants}
+            isPublic={room.is_public}
+          />
         ))}
       </div>
     </div>

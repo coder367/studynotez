@@ -11,6 +11,7 @@ import Notes from "./pages/Notes";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 import StudyRoom from "./pages/StudyRoom";
+import StudyRoomView from "./pages/StudyRoomView";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/dashboard/chat" element={<Chat />} />
           <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/study-room" element={<StudyRoom />} />
+          <Route path="/dashboard/study-room/:id" element={<StudyRoomView />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
