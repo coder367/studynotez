@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface UserProfileProps {
 export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedNote, setSelectedNote] = useState<any>(null);
 
   const { data: profile } = useQuery({
@@ -70,23 +71,38 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
 
     try {
       if (isFollowing) {
-        await supabase
+        const { error } = await supabase
           .from("followers")
           .delete()
           .eq("follower_id", currentUserId)
           .eq("following_id", userId);
+
+        if (error) throw error;
       } else {
-        await supabase
+        // Check if the follow relationship already exists
+        const { data: existingFollow } = await supabase
           .from("followers")
-          .insert({
-            follower_id: currentUserId,
-            following_id: userId,
-          });
+          .select("*")
+          .eq("follower_id", currentUserId)
+          .eq("following_id", userId);
+
+        if (!existingFollow || existingFollow.length === 0) {
+          const { error } = await supabase
+            .from("followers")
+            .insert({
+              follower_id: currentUserId,
+              following_id: userId,
+            });
+
+          if (error) throw error;
+        }
       }
-    } catch (error) {
+      // Invalidate the followers query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ["isFollowing", userId] });
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update follow status",
+        description: error.message || "Failed to update follow status",
         variant: "destructive",
       });
     }
