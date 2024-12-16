@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Video, Mic, MicOff, VideoOff, UserMinus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Progress } from "@/components/ui/progress";
 
 interface VideoCallProps {
   roomId: string;
@@ -15,6 +16,11 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(!isVoiceOnly);
   const [userName, setUserName] = useState<string>("");
+  const [audioLevel, setAudioLevel] = useState(0);
+  const audioContext = useRef<AudioContext | null>(null);
+  const analyser = useRef<AnalyserNode | null>(null);
+  const dataArray = useRef<Uint8Array | null>(null);
+  const animationFrame = useRef<number>();
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -45,6 +51,25 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
+
+        // Initialize audio analysis
+        audioContext.current = new AudioContext();
+        analyser.current = audioContext.current.createAnalyser();
+        const source = audioContext.current.createMediaStreamSource(stream);
+        source.connect(analyser.current);
+        analyser.current.fftSize = 256;
+        const bufferLength = analyser.current.frequencyBinCount;
+        dataArray.current = new Uint8Array(bufferLength);
+
+        const updateAudioLevel = () => {
+          if (analyser.current && dataArray.current) {
+            analyser.current.getByteFrequencyData(dataArray.current);
+            const average = dataArray.current.reduce((a, b) => a + b) / dataArray.current.length;
+            setAudioLevel(Math.min(100, (average / 128) * 100));
+          }
+          animationFrame.current = requestAnimationFrame(updateAudioLevel);
+        };
+        updateAudioLevel();
       } catch (error) {
         console.error("Error accessing media devices:", error);
       }
@@ -56,6 +81,12 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
       if (localVideoRef.current?.srcObject) {
         const tracks = (localVideoRef.current.srcObject as MediaStream).getTracks();
         tracks.forEach(track => track.stop());
+      }
+      if (audioContext.current) {
+        audioContext.current.close();
+      }
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current);
       }
     };
   }, [isVoiceOnly]);
@@ -138,6 +169,12 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
           </Button>
         </div>
       </div>
+      {isAudioEnabled && (
+        <div className="flex items-center gap-2 px-4">
+          <Mic className="h-4 w-4 text-muted-foreground" />
+          <Progress value={audioLevel} className="h-2" />
+        </div>
+      )}
     </div>
   );
 };

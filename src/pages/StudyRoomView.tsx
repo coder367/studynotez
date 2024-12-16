@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import VideoCall from "@/components/study-room/VideoCall";
+import { Badge } from "@/components/ui/badge";
 
 const StudyRoomView = () => {
   const { id } = useParams();
@@ -15,6 +16,21 @@ const StudyRoomView = () => {
 
   useEffect(() => {
     fetchRoomDetails();
+    const subscription = supabase
+      .channel('room_participants')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'room_participants',
+        filter: `room_id=eq.${id}` 
+      }, () => {
+        fetchRoomDetails();
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [id]);
 
   const fetchRoomDetails = async () => {
@@ -59,19 +75,24 @@ const StudyRoomView = () => {
 
   return (
     <div className="container mx-auto py-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/dashboard/study-room")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{room.name}</h1>
-          <p className="text-muted-foreground">
-            {participants.length} participant{participants.length !== 1 ? "s" : ""}
-          </p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/dashboard/study-room")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{room.name}</h1>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <Badge variant="secondary">
+                {participants.length} participant{participants.length !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+          </div>
         </div>
       </div>
 

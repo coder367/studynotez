@@ -1,25 +1,34 @@
 import { Auth as SupabaseAuth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProfileSetupModal } from "@/components/profile/ProfileSetupModal";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [newUserId, setNewUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
       if (event === "SIGNED_IN") {
-        toast({
-          title: "Welcome!",
-          description: "Successfully signed in.",
-        });
-        navigate("/dashboard");
+        if (session?.user.app_metadata.provider === "email") {
+          // Only show profile setup for email signups
+          setNewUserId(session.user.id);
+          setShowProfileSetup(true);
+        } else {
+          toast({
+            title: "Welcome!",
+            description: "Successfully signed in.",
+          });
+          navigate("/dashboard");
+        }
       } else if (event === "SIGNED_OUT") {
         navigate("/");
       } else if (event === "USER_UPDATED") {
@@ -115,6 +124,17 @@ const Auth = () => {
           />
         </div>
       </div>
+
+      {showProfileSetup && newUserId && (
+        <ProfileSetupModal
+          isOpen={showProfileSetup}
+          onClose={() => {
+            setShowProfileSetup(false);
+            navigate("/dashboard");
+          }}
+          userId={newUserId}
+        />
+      )}
     </div>
   );
 };
