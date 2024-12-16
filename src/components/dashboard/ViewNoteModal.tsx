@@ -93,23 +93,36 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
 
     try {
       if (isFollowing) {
-        await supabase
+        const { error } = await supabase
           .from("followers")
           .delete()
           .eq("follower_id", currentUser.id)
           .eq("following_id", note.user_id);
+
+        if (error) throw error;
       } else {
-        await supabase
+        // Check if the follow relationship already exists
+        const { data: existingFollow } = await supabase
           .from("followers")
-          .insert({
-            follower_id: currentUser.id,
-            following_id: note.user_id,
-          });
+          .select("*")
+          .eq("follower_id", currentUser.id)
+          .eq("following_id", note.user_id);
+
+        if (!existingFollow || existingFollow.length === 0) {
+          const { error } = await supabase
+            .from("followers")
+            .insert({
+              follower_id: currentUser.id,
+              following_id: note.user_id,
+            });
+
+          if (error) throw error;
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update follow status",
+        description: error.message || "Failed to update follow status",
         variant: "destructive",
       });
     }
