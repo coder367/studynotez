@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Download, User, Heart, Share2, Bookmark, MessageSquare } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { NoteHeader } from "./note-modal/NoteHeader";
+import { UserInfo } from "./note-modal/UserInfo";
+import { NoteActions } from "./note-modal/NoteActions";
 
 interface ViewNoteModalProps {
   isOpen: boolean;
@@ -50,20 +50,21 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
     },
   });
 
-  const { data: isFollowing } = useQuery({
+  const { data: followers = [] } = useQuery({
     queryKey: ["isFollowing", note.user_id],
     queryFn: async () => {
-      if (!currentUser) return false;
+      if (!currentUser) return [];
       const { data } = await supabase
         .from("followers")
         .select("*")
         .eq("follower_id", currentUser.id)
-        .eq("following_id", note.user_id)
-        .single();
-      return !!data;
+        .eq("following_id", note.user_id);
+      return data || [];
     },
     enabled: !!currentUser && currentUser.id !== note.user_id,
   });
+
+  const isFollowing = followers.length > 0;
 
   const handleDownload = async () => {
     if (note.file_url) {
@@ -207,37 +208,16 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-        <div className="flex justify-between items-center p-6 border-b">
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold">{note.title}</h2>
-            {note.description && (
-              <p className="text-muted-foreground mt-1">{note.description}</p>
-            )}
-            <div className="flex gap-2 mt-2">
-              {note.subject && (
-                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                  {note.subject}
-                </span>
-              )}
-              {note.university && (
-                <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full">
-                  {note.university}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {note.file_url && (
-              <Button onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
-                Download
-              </Button>
-            )}
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          </div>
-        </div>
+        <DialogTitle className="sr-only">{note.title}</DialogTitle>
+        <NoteHeader
+          title={note.title}
+          description={note.description}
+          subject={note.subject}
+          university={note.university}
+          fileUrl={note.file_url}
+          onDownload={handleDownload}
+          onClose={onClose}
+        />
 
         <div className="flex-1 min-h-0 flex">
           <div className="flex-1 overflow-hidden">
@@ -251,66 +231,22 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
           </div>
           {profile && (
             <div className="w-64 border-l p-4">
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-background">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={profile.avatar_url} />
-                  <AvatarFallback>
-                    <User className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h4 className="font-medium">{profile.full_name}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(note.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 mt-4">
-                {currentUser && currentUser.id !== note.user_id && (
-                  <>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleFollow}
-                    >
-                      {isFollowing ? "Unfollow" : "Follow"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleChat}
-                    >
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Chat
-                    </Button>
-                  </>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleLike}
-                    className={isLiked ? "text-red-500" : ""}
-                  >
-                    <Heart className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleSave}
-                    className={isSaved ? "text-yellow-500" : ""}
-                  >
-                    <Bookmark className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleShare}
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <UserInfo
+                avatarUrl={profile.avatar_url}
+                fullName={profile.full_name}
+                createdAt={note.created_at}
+              />
+              <NoteActions
+                isLiked={isLiked}
+                isSaved={isSaved}
+                showChatButton={!!currentUser && currentUser.id !== note.user_id}
+                isFollowing={isFollowing}
+                onLike={handleLike}
+                onSave={handleSave}
+                onShare={handleShare}
+                onChat={handleChat}
+                onFollow={handleFollow}
+              />
             </div>
           )}
         </div>
