@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import ViewNoteModal from "./ViewNoteModal";
 
 interface Note {
   id: string;
@@ -10,6 +11,10 @@ interface Note {
   description?: string;
   subject?: string;
   university?: string;
+  file_url?: string;
+  file_type?: string;
+  user_id: string;
+  created_at: string;
 }
 
 interface RecentNote {
@@ -19,6 +24,7 @@ interface RecentNote {
 
 const RecentNotes = () => {
   const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   useEffect(() => {
     const fetchRecentNotes = async () => {
@@ -35,7 +41,11 @@ const RecentNotes = () => {
             title,
             description,
             subject,
-            university
+            university,
+            file_url,
+            file_type,
+            user_id,
+            created_at
           )
         `)
         .eq("activity_type", "view")
@@ -51,6 +61,15 @@ const RecentNotes = () => {
     fetchRecentNotes();
   }, []);
 
+  const handleNoteClick = async (note: Note) => {
+    await supabase.from("note_activities").insert({
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      note_id: note.id,
+      activity_type: "view",
+    });
+    setSelectedNote(note);
+  };
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -63,7 +82,8 @@ const RecentNotes = () => {
               recentNotes.map((activity) => (
                 <div
                   key={`${activity.notes.id}-${activity.created_at}`}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleNoteClick(activity.notes)}
                 >
                   <FileText className="h-5 w-5 text-secondary" />
                   <div>
@@ -85,6 +105,13 @@ const RecentNotes = () => {
           </div>
         </ScrollArea>
       </CardContent>
+      {selectedNote && (
+        <ViewNoteModal
+          isOpen={!!selectedNote}
+          onClose={() => setSelectedNote(null)}
+          note={selectedNote}
+        />
+      )}
     </Card>
   );
 };
