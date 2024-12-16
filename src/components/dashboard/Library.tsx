@@ -22,22 +22,28 @@ const Library = () => {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   useEffect(() => {
-    const fetchNotes = async () => {
+    const fetchSavedNotes = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
-        .from("notes")
-        .select("*")
+        .from("saved_notes")
+        .select(`
+          note_id,
+          notes (*)
+        `)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        setNotes(data);
+        setNotes(data.map(item => item.notes));
       }
     };
 
-    fetchNotes();
+    fetchSavedNotes();
   }, []);
 
   const handleNoteClick = async (note: Note) => {
-    // Record note view activity
     await supabase.from("note_activities").insert({
       user_id: (await supabase.auth.getUser()).data.user?.id,
       note_id: note.id,

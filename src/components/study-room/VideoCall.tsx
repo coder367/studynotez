@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Video, Mic, MicOff, VideoOff } from "lucide-react";
+import { Video, Mic, MicOff, VideoOff, UserMinus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoCallProps {
   roomId: string;
@@ -8,9 +10,29 @@ interface VideoCallProps {
 }
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
+  const navigate = useNavigate();
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(!isVoiceOnly);
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+        if (profile) {
+          setUserName(profile.full_name || "Anonymous");
+        }
+      }
+    };
+
+    fetchUserName();
+  }, []);
 
   useEffect(() => {
     const initializeMedia = async () => {
@@ -31,7 +53,6 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     initializeMedia();
 
     return () => {
-      // Cleanup media streams
       if (localVideoRef.current?.srcObject) {
         const tracks = (localVideoRef.current.srcObject as MediaStream).getTracks();
         tracks.forEach(track => track.stop());
@@ -57,17 +78,37 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     }
   };
 
+  const handleLeaveCall = async () => {
+    if (localVideoRef.current?.srcObject) {
+      const tracks = (localVideoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+    }
+
+    await supabase
+      .from("room_participants")
+      .delete()
+      .eq("room_id", roomId)
+      .eq("user_id", (await supabase.auth.getUser()).data.user?.id);
+
+    navigate("/dashboard/study-room");
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
         {!isVoiceOnly && (
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
+          <>
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute top-2 left-2 bg-black/50 px-2 py-1 rounded text-white text-sm">
+              {userName}
+            </div>
+          </>
         )}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
           <Button
@@ -88,6 +129,13 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
               {isVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
             </Button>
           )}
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={handleLeaveCall}
+          >
+            <UserMinus className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>
