@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { FileText } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import ViewNoteModal from "./ViewNoteModal";
+import { useNavigate } from "react-router-dom";
 
 interface Note {
   id: string;
@@ -20,6 +20,7 @@ interface Note {
 const Library = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSavedNotes = async () => {
@@ -52,53 +53,56 @@ const Library = () => {
     setSelectedNote(note);
   };
 
+  const handleUserClick = (userId: string) => {
+    navigate(`/dashboard/profile/${userId}`);
+  };
+
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>My Library</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[300px]">
-          <div className="space-y-4">
-            {notes.length > 0 ? (
-              notes.map((note) => (
-                <div
-                  key={note.id}
-                  className="flex items-start gap-3 p-4 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleNoteClick(note)}
-                >
-                  <FileText className="h-5 w-5 text-primary mt-1" />
-                  <div>
-                    <p className="font-medium">{note.title}</p>
-                    {note.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {note.description}
-                      </p>
-                    )}
-                    <div className="flex gap-2 mt-2">
-                      {note.subject && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                          {note.subject}
-                        </span>
-                      )}
-                      {note.university && (
-                        <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full">
-                          {note.university}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(note.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
+    <>
+      {notes.map((note) => (
+        <Card
+          key={note.id}
+          className="w-[300px] flex-shrink-0"
+        >
+          <CardContent className="p-4">
+            <div
+              className="flex items-start gap-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => handleNoteClick(note)}
+            >
+              <FileText className="h-5 w-5 text-primary mt-1" />
+              <div>
+                <p className="font-medium">{note.title}</p>
+                {note.description && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {note.description}
+                  </p>
+                )}
+                <div className="flex gap-2 mt-2">
+                  {note.subject && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                      {note.subject}
+                    </span>
+                  )}
+                  {note.university && (
+                    <span 
+                      className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUserClick(note.user_id);
+                      }}
+                    >
+                      {note.university}
+                    </span>
+                  )}
                 </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">Your library is empty</p>
-            )}
-          </div>
-        </ScrollArea>
-      </CardContent>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {new Date(note.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
       {selectedNote && (
         <ViewNoteModal
           isOpen={!!selectedNote}
@@ -106,7 +110,7 @@ const Library = () => {
           note={selectedNote}
         />
       )}
-    </Card>
+    </>
   );
 };
 
