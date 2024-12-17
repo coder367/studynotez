@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import { Upload } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { useToast } from "@/hooks/use-toast";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import RecentNotes from "@/components/dashboard/RecentNotes";
@@ -25,20 +24,6 @@ const Dashboard = () => {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedFile(null);
-  };
-
-  const scrollContainer = (containerId: string, direction: 'left' | 'right') => {
-    const container = document.getElementById(containerId);
-    if (container) {
-      const scrollAmount = 300;
-      const newScrollLeft = direction === 'left' 
-        ? container.scrollLeft - scrollAmount 
-        : container.scrollLeft + scrollAmount;
-      container.scrollTo({
-        left: newScrollLeft,
-        behavior: 'smooth'
-      });
-    }
   };
 
   return (
@@ -71,65 +56,17 @@ const Dashboard = () => {
               </div>
               
               <div className="space-y-8">
-                <div className="relative">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Recent Notes</h2>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => scrollContainer('recent-notes-container', 'left')}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => scrollContainer('recent-notes-container', 'right')}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div 
-                    id="recent-notes-container"
-                    className="flex overflow-x-auto scrollbar-hide scroll-smooth"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  >
-                    <div className="flex gap-4 min-w-max">
-                      <RecentNotes />
-                    </div>
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Recent Notes</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <RecentNotes />
                   </div>
                 </div>
 
-                <div className="relative">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">My Library</h2>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => scrollContainer('library-container', 'left')}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => scrollContainer('library-container', 'right')}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div 
-                    id="library-container"
-                    className="flex overflow-x-auto scrollbar-hide scroll-smooth"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  >
-                    <div className="flex gap-4 min-w-max">
-                      <Library />
-                    </div>
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">My Library</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Library />
                   </div>
                 </div>
               </div>
