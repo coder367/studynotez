@@ -248,6 +248,7 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
                 avatarUrl={profile.avatar_url}
                 fullName={profile.full_name}
                 createdAt={note.created_at}
+                userId={note.user_id}
               />
               <NoteActions
                 isLiked={isLiked}

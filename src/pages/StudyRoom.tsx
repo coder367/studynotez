@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,41 +9,46 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import RoomCard from "@/components/study-room/RoomCard";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const StudyRoom = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [rooms, setRooms] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+  });
 
-  const fetchRooms = async () => {
-    const { data: rooms, error } = await supabase
-      .from("study_rooms")
-      .select(`
-        *,
-        room_participants (
-          count
-        )
-      `)
-      .order("created_at", { ascending: false });
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["studyRooms"],
+    queryFn: async () => {
+      const { data: rooms, error } = await supabase
+        .from("study_rooms")
+        .select(`
+          *,
+          room_participants (
+            count
+          )
+        `)
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch study rooms",
-        variant: "destructive",
-      });
-      return;
-    }
+      if (error) throw error;
 
-    setRooms(rooms.map(room => ({
-      ...room,
-      participants: room.room_participants[0]?.count || 0
-    })));
+      return rooms.map(room => ({
+        ...room,
+        participants: room.room_participants[0]?.count || 0
+      }));
+    },
+  });
+
+  const generateInvitationCode = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
   const handleCreateRoom = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -54,10 +59,10 @@ const StudyRoom = () => {
     const name = formData.get("name") as string;
     const type = formData.get("type") as "study" | "focus";
     const isPublic = formData.get("visibility") === "public";
+    const invitationCode = !isPublic ? generateInvitationCode() : null;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!currentUser) throw new Error("Not authenticated");
 
       const { data: room, error } = await supabase
         .from("study_rooms")
@@ -65,7 +70,8 @@ const StudyRoom = () => {
           name,
           type,
           is_public: isPublic,
-          created_by: user.id,
+          created_by: currentUser.id,
+          invitation_code: invitationCode,
         })
         .select()
         .single();
@@ -76,15 +82,22 @@ const StudyRoom = () => {
         .from("room_participants")
         .insert({
           room_id: room.id,
-          user_id: user.id,
+          user_id: currentUser.id,
         });
 
-      toast({
-        title: "Success",
-        description: "Room created successfully",
-      });
+      if (!isPublic) {
+        toast({
+          title: "Room Created",
+          description: `Invitation Code: ${invitationCode}`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Room created successfully",
+        });
+      }
 
-      fetchRooms();
+      queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -93,6 +106,47 @@ const StudyRoom = () => {
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    try {
+      const { error } = await supabase
+        .from("study_rooms")
+        .delete()
+        .eq("id", roomId)
+        .eq("created_by", currentUser?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Room deleted successfully",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete room",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyInvitationCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast({
+        title: "Success",
+        description: "Invitation code copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy invitation code",
+        variant: "destructive",
+      });
     }
   };
 
@@ -165,14 +219,35 @@ const StudyRoom = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {rooms.map((room) => (
-          <RoomCard
-            key={room.id}
-            id={room.id}
-            name={room.name}
-            type={room.type}
-            participants={room.participants}
-            isPublic={room.is_public}
-          />
+          <div key={room.id} className="relative">
+            <RoomCard
+              id={room.id}
+              name={room.name}
+              type={room.type}
+              participants={room.participants}
+              isPublic={room.is_public}
+            />
+            {room.created_by === currentUser?.id && (
+              <div className="absolute top-4 right-4 flex gap-2">
+                {!room.is_public && room.invitation_code && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyInvitationCode(room.invitation_code!)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => handleDeleteRoom(room.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>
