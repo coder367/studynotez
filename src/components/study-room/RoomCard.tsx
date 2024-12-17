@@ -2,11 +2,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Video, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import type { StudyRoomType } from "@/types/study-room";
 
 interface RoomCardProps {
   id: string;
   name: string;
-  type: "study" | "focus";
+  type: StudyRoomType;
   participants: number;
   isPublic?: boolean;
 }

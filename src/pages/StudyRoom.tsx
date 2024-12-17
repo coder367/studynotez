@@ -1,21 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Copy } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import RoomCard from "@/components/study-room/RoomCard";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CreateRoomForm } from "@/components/study-room/CreateRoomForm";
+import type { StudyRoom } from "@/types/study-room";
 
-const StudyRoom = () => {
+const StudyRoomPage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isCreating, setIsCreating] = useState(false);
-  const queryClient = useQueryClient();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
@@ -43,112 +39,9 @@ const StudyRoom = () => {
       return rooms.map(room => ({
         ...room,
         participants: room.room_participants[0]?.count || 0
-      }));
+      })) as StudyRoom[];
     },
   });
-
-  const generateInvitationCode = () => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  };
-
-  const handleCreateRoom = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsCreating(true);
-
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get("name") as string;
-    const type = formData.get("type") as "study" | "focus";
-    const isPublic = formData.get("visibility") === "public";
-    const invitationCode = !isPublic ? generateInvitationCode() : null;
-
-    try {
-      if (!currentUser) throw new Error("Not authenticated");
-
-      const { data: room, error } = await supabase
-        .from("study_rooms")
-        .insert({
-          name,
-          type,
-          is_public: isPublic,
-          created_by: currentUser.id,
-          invitation_code: invitationCode,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      await supabase
-        .from("room_participants")
-        .insert({
-          room_id: room.id,
-          user_id: currentUser.id,
-        });
-
-      if (!isPublic) {
-        toast({
-          title: "Room Created",
-          description: `Invitation Code: ${invitationCode}`,
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Room created successfully",
-        });
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create room",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleDeleteRoom = async (roomId: string) => {
-    try {
-      const { error } = await supabase
-        .from("study_rooms")
-        .delete()
-        .eq("id", roomId)
-        .eq("created_by", currentUser?.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Room deleted successfully",
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete room",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const copyInvitationCode = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      toast({
-        title: "Success",
-        description: "Invitation code copied to clipboard",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to copy invitation code",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="container mx-auto py-6">
@@ -164,7 +57,7 @@ const StudyRoom = () => {
           <h1 className="text-2xl font-bold">Study Rooms</h1>
         </div>
         
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -175,44 +68,10 @@ const StudyRoom = () => {
             <DialogHeader>
               <DialogTitle>Create a New Room</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreateRoom} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Room Name</Label>
-                <Input id="name" name="name" required />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Room Type</Label>
-                <RadioGroup name="type" defaultValue="study" className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="study" id="study" />
-                    <Label htmlFor="study">Study Room (Video)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="focus" id="focus" />
-                    <Label htmlFor="focus">Focus Room (Voice)</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Visibility</Label>
-                <RadioGroup name="visibility" defaultValue="private" className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="public" id="public" />
-                    <Label htmlFor="public">Public</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="private" id="private" />
-                    <Label htmlFor="private">Private</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isCreating}>
-                {isCreating ? "Creating..." : "Create Room"}
-              </Button>
-            </form>
+            <CreateRoomForm 
+              currentUserId={currentUser?.id}
+              onSuccess={() => setIsDialogOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -227,26 +86,6 @@ const StudyRoom = () => {
               participants={room.participants}
               isPublic={room.is_public}
             />
-            {room.created_by === currentUser?.id && (
-              <div className="absolute top-4 right-4 flex gap-2">
-                {!room.is_public && room.invitation_code && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => copyInvitationCode(room.invitation_code!)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                )}
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDeleteRoom(room.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -254,4 +93,4 @@ const StudyRoom = () => {
   );
 };
 
-export default StudyRoom;
+export default StudyRoomPage;
