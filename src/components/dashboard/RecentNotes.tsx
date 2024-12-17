@@ -51,11 +51,19 @@ const RecentNotes = () => {
         `)
         .eq("activity_type", "view")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
+        .order("created_at", { ascending: false });
 
       if (!error && data) {
-        setRecentNotes(data as RecentNote[]);
+        // Filter out duplicate notes, keeping only the most recent view
+        const uniqueNotes = data.reduce((acc: RecentNote[], current: RecentNote) => {
+          const exists = acc.find(item => item.notes.id === current.notes.id);
+          if (!exists) {
+            acc.push(current);
+          }
+          return acc;
+        }, []);
+
+        setRecentNotes(uniqueNotes.slice(0, 10));
       }
     };
 
