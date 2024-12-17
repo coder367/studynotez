@@ -13,13 +13,36 @@ const Auth = () => {
   const { toast } = useToast();
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [newUserId, setNewUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Check for existing session first
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log("Existing session found:", session);
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to check authentication status",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
+      
       if (event === "SIGNED_IN") {
         if (session?.user.app_metadata.provider === "email") {
-          // Only show profile setup for email signups
           setNewUserId(session.user.id);
           setShowProfileSetup(true);
         } else {
@@ -31,19 +54,25 @@ const Auth = () => {
         }
       } else if (event === "SIGNED_OUT") {
         navigate("/");
+      } else if (event === "TOKEN_REFRESHED") {
+        console.log("Token refreshed successfully");
       } else if (event === "USER_UPDATED") {
         console.log("User updated:", session);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard");
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
