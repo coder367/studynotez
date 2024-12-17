@@ -26,10 +26,12 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
         .select("*")
         .order("created_at", { ascending: true });
 
-      if (activeChat !== "public") {
-        query
-          .or(`sender_id.eq.${currentUser},receiver_id.eq.${currentUser}`)
-          .or(`sender_id.eq.${(activeChat as any).id},receiver_id.eq.${(activeChat as any).id}`);
+      if (activeChat === "public") {
+        query.is("receiver_id", null);
+      } else if (activeChat) {
+        query.or(
+          `and(sender_id.eq.${currentUser},receiver_id.eq.${(activeChat as any).id}),and(sender_id.eq.${(activeChat as any).id},receiver_id.eq.${currentUser})`
+        );
       }
 
       const { data } = await query;

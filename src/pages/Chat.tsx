@@ -23,38 +23,33 @@ const Chat = () => {
     getCurrentUser();
   }, []);
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["chat-users"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .neq("id", user.id);
-      
-      return data || [];
-    }
-  });
-
   // Handle direct chat navigation from URL params
   useEffect(() => {
     const userId = searchParams.get('user');
     if (userId) {
-      const user = users.find(u => u.id === userId);
-      if (user) {
-        setActiveChat(user);
-      }
+      // Fetch user profile
+      const fetchUser = async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("id", userId)
+          .single();
+        
+        if (data) {
+          setActiveChat(data);
+        }
+      };
+      fetchUser();
     }
-  }, [searchParams, users]);
+  }, [searchParams]);
 
   return (
     <div className="h-screen flex">
       <ChatSidebar 
-        users={users}
+        users={[]}
         activeChat={activeChat}
         onChatSelect={setActiveChat}
+        currentUserId={currentUser}
       />
 
       <div className="flex-1 flex flex-col">
