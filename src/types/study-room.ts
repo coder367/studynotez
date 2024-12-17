@@ -9,5 +9,6 @@ export interface StudyRoom {
   created_at: string;
   updated_at: string;
   invitation_code?: string;
+  participants: number;
   room_participants?: { count: number }[];
 }

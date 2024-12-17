@@ -38,7 +38,7 @@ const StudyRoomPage = () => {
 
       return rooms.map(room => ({
         ...room,
-        participants: room.room_participants[0]?.count || 0
+        participants: room.room_participants?.[0]?.count || 0
       })) as StudyRoom[];
     },
   });
