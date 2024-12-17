@@ -84,11 +84,11 @@ const RecentNotes = () => {
   };
 
   return (
-    <>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {recentNotes.map((activity) => (
         <Card
           key={`${activity.notes.id}-${activity.created_at}`}
-          className="w-[300px] flex-shrink-0"
+          className="w-full"
         >
           <CardContent className="p-4">
             <div
@@ -124,7 +124,7 @@ const RecentNotes = () => {
           note={selectedNote}
         />
       )}
-    </>
+    </div>
   );
 };
 
