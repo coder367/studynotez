@@ -93,13 +93,21 @@ const StudyRoomView = () => {
     }
   };
 
-  const handleCopyInvitationCode = () => {
+  const handleCopyInvitationCode = async () => {
     if (room?.invitation_code) {
-      navigator.clipboard.writeText(room.invitation_code);
-      toast({
-        title: "Success",
-        description: "Invitation code copied to clipboard",
-      });
+      try {
+        await navigator.clipboard.writeText(room.invitation_code);
+        toast({
+          title: "Success",
+          description: "Invitation code copied to clipboard",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to copy invitation code",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -132,7 +140,7 @@ const StudyRoomView = () => {
   if (!room) return null;
 
   const isPrivateRoom = !room.is_public;
-  const isRoomCreator = room.created_by === currentUser?.id;
+  const isRoomCreator = currentUser && room.created_by === currentUser.id;
 
   return (
     <div className="container mx-auto py-6">
@@ -159,7 +167,7 @@ const StudyRoomView = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {isPrivateRoom && room.invitation_code && (
+          {isRoomCreator && isPrivateRoom && room.invitation_code && (
             <Button
               variant="outline"
               onClick={handleCopyInvitationCode}

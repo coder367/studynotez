@@ -19,7 +19,6 @@ const DashboardNavbar = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check session on mount
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -39,7 +38,7 @@ const DashboardNavbar = () => {
     checkSession();
   }, [navigate, toast]);
 
-  const { data: notifications = [], error: notificationsError } = useQuery({
+  const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -65,7 +64,6 @@ const DashboardNavbar = () => {
     },
     refetchInterval: 30000,
     enabled: !!user,
-    retry: false,
     meta: {
       onError: (error: Error) => {
         console.error("Notifications error:", error);

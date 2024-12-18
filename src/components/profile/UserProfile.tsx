@@ -43,29 +43,41 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
     },
   });
 
-  const { data: followersCount = 0 } = useQuery({
+  const { data: followers = [] } = useQuery({
     queryKey: ["followers", userId],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from("followers")
-        .select("*", { count: 'exact', head: true })
+        .select(`
+          *,
+          follower:profiles!followers_follower_id_fkey (
+            id,
+            full_name
+          )
+        `)
         .eq("following_id", userId);
-      return count || 0;
+      return data || [];
     },
   });
 
-  const { data: followingCount = 0 } = useQuery({
+  const { data: following = [] } = useQuery({
     queryKey: ["following", userId],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from("followers")
-        .select("*", { count: 'exact', head: true })
+        .select(`
+          *,
+          following:profiles!followers_following_id_fkey (
+            id,
+            full_name
+          )
+        `)
         .eq("follower_id", userId);
-      return count || 0;
+      return data || [];
     },
   });
 
-  const isFollowing = followersCount > 0;
+  const isFollowing = followers.some(f => f.follower_id === currentUserId);
 
   const handleFollow = async () => {
     if (!currentUserId) {
@@ -87,24 +99,17 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
 
         if (error) throw error;
       } else {
-        const { data: existingFollow } = await supabase
+        const { error } = await supabase
           .from("followers")
-          .select("*")
-          .eq("follower_id", currentUserId)
-          .eq("following_id", userId);
+          .insert({
+            follower_id: currentUserId,
+            following_id: userId,
+          });
 
-        if (!existingFollow || existingFollow.length === 0) {
-          const { error } = await supabase
-            .from("followers")
-            .insert({
-              follower_id: currentUserId,
-              following_id: userId,
-            });
-
-          if (error) throw error;
-        }
+        if (error) throw error;
       }
-      queryClient.invalidateQueries({ queryKey: ["isFollowing", userId] });
+      queryClient.invalidateQueries({ queryKey: ["followers", userId] });
+      queryClient.invalidateQueries({ queryKey: ["following", userId] });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -120,7 +125,7 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-2xl font-bold text-primary">
@@ -130,8 +135,8 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
           <div>
             <h2 className="text-2xl font-bold">{profile?.full_name || "Anonymous"}</h2>
             <div className="flex gap-4 text-sm text-muted-foreground">
-              <span>{followersCount} followers</span>
-              <span>{followingCount} following</span>
+              <span>{followers.length} followers</span>
+              <span>{following.length} following</span>
             </div>
             {profile?.bio && <p className="text-muted-foreground mt-1">{profile.bio}</p>}
           </div>
@@ -157,6 +162,40 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
             </Button>
           </div>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Followers</h3>
+          <div className="space-y-2">
+            {followers.map((follow) => (
+              <Card key={follow.id} className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    {follow.follower?.full_name?.[0] || "?"}
+                  </div>
+                  <span>{follow.follower?.full_name || "Anonymous"}</span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Following</h3>
+          <div className="space-y-2">
+            {following.map((follow) => (
+              <Card key={follow.id} className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    {follow.following?.full_name?.[0] || "?"}
+                  </div>
+                  <span>{follow.following?.full_name || "Anonymous"}</span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div>

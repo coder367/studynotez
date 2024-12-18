@@ -62,6 +62,24 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
     }
   }, [activeChat]);
 
+  // Subscribe to new messages
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:messages')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages' 
+      }, () => {
+        refetchMessages();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchMessages]);
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -119,6 +137,9 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
       setMessage("");
       setSelectedFile(null);
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      }
     } catch (error: any) {
       toast({
         title: "Error",
