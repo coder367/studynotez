@@ -11,18 +11,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 const DashboardNavbar = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const { data: notifications = [] } = useQuery({
+  // Check session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        console.error("Session error:", error);
+        toast({
+          title: "Session expired",
+          description: "Please sign in again",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+    };
+
+    checkSession();
+  }, [navigate, toast]);
+
+  const { data: notifications = [], error: notificationsError } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error("No authenticated user");
+      }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("notifications")
         .select(`
           *,
@@ -30,25 +54,47 @@ const DashboardNavbar = () => {
             full_name
           )
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .order("created_at", { ascending: false })
         .limit(5);
 
+      if (error) throw error;
       return data || [];
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
+    enabled: !!user, // Only fetch when we have a user
+    retry: false, // Don't retry on error
+    onError: (error) => {
+      console.error("Notifications error:", error);
+      if (error.message === "No authenticated user") {
+        navigate("/auth");
+      }
+    },
   });
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        navigate("/auth");
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setUser(session?.user || null);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     navigate("/");
   };
 
