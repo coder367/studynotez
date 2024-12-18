@@ -15,6 +15,14 @@ const StudyRoomView = () => {
   const { toast } = useToast();
   const [invitationCode, setInvitationCode] = useState("");
 
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+  });
+
   const { data: room } = useQuery({
     queryKey: ["studyRoom", id],
     queryFn: async () => {
@@ -51,8 +59,7 @@ const StudyRoomView = () => {
 
   const handleJoinRoom = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!currentUser) throw new Error("Not authenticated");
 
       if (!room?.is_public && room?.invitation_code !== invitationCode) {
         toast({
@@ -67,7 +74,7 @@ const StudyRoomView = () => {
         .from("room_participants")
         .insert({
           room_id: id,
-          user_id: user.id,
+          user_id: currentUser.id,
         });
 
       if (error) throw error;
@@ -98,11 +105,13 @@ const StudyRoomView = () => {
 
   const handleDeleteRoom = async () => {
     try {
+      if (!currentUser) return;
+      
       const { error } = await supabase
         .from("study_rooms")
         .delete()
         .eq("id", id)
-        .eq("created_by", currentUser?.id);
+        .eq("created_by", currentUser.id);
 
       if (error) throw error;
 
