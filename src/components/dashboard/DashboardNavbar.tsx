@@ -62,19 +62,21 @@ const DashboardNavbar = () => {
       return data || [];
     },
     refetchInterval: 30000,
-    enabled: !!user, // Only fetch when we have a user
-    retry: false, // Don't retry on error
-    onError: (error) => {
-      console.error("Notifications error:", error);
-      if (error.message === "No authenticated user") {
-        navigate("/auth");
+    enabled: !!user,
+    retry: false,
+    meta: {
+      onError: (error: Error) => {
+        console.error("Notifications error:", error);
+        if (error.message === "No authenticated user") {
+          navigate("/auth");
+        }
       }
-    },
+    }
   });
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      if (event === 'SIGNED_OUT') {
         navigate("/auth");
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setUser(session?.user || null);
