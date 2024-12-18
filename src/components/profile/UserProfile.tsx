@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, UserPlus, UserMinus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ViewNoteModal from "@/components/dashboard/ViewNoteModal";
-import { useState } from "react";
+import { ProfileHeader } from "./ProfileHeader";
+import { FollowingList } from "./FollowingList";
 
 interface UserProfileProps {
   userId: string;
@@ -17,7 +17,6 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedNote, setSelectedNote] = useState<any>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],
@@ -28,18 +27,6 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
         .eq("id", userId)
         .single();
       return data;
-    },
-  });
-
-  const { data: userNotes = [] } = useQuery({
-    queryKey: ["userNotes", userId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("notes")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-      return data || [];
     },
   });
 
@@ -125,77 +112,20 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-2xl font-bold text-primary">
-              {profile?.full_name?.charAt(0) || "?"}
-            </span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold">{profile?.full_name || "Anonymous"}</h2>
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <span>{followers?.length || 0} followers</span>
-              <span>{following?.length || 0} following</span>
-            </div>
-            {profile?.bio && <p className="text-muted-foreground mt-1">{profile.bio}</p>}
-          </div>
-        </div>
-        {currentUserId && currentUserId !== userId && (
-          <div className="flex gap-2">
-            <Button onClick={handleFollow} variant="outline">
-              {isFollowing ? (
-                <>
-                  <UserMinus className="mr-2 h-4 w-4" />
-                  Unfollow
-                </>
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Follow
-                </>
-              )}
-            </Button>
-            <Button onClick={handleChat}>
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Message
-            </Button>
-          </div>
-        )}
-      </div>
+      <ProfileHeader 
+        profile={profile}
+        followersCount={followers?.length || 0}
+        followingCount={following?.length || 0}
+        currentUserId={currentUserId}
+        userId={userId}
+        isFollowing={isFollowing}
+        onFollow={handleFollow}
+        onChat={handleChat}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Followers</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {Array.isArray(followers) && followers.map((follow) => (
-              <Card key={follow.id} className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    {follow.follower?.full_name?.[0] || "?"}
-                  </div>
-                  <span>{follow.follower?.full_name || "Anonymous"}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Following</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {Array.isArray(following) && following.map((follow) => (
-              <Card key={follow.id} className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    {follow.following?.full_name?.[0] || "?"}
-                  </div>
-                  <span>{follow.following?.full_name || "Anonymous"}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Following</h3>
+        <FollowingList following={following} onProfileClick={(id) => navigate(`/dashboard/profile/${id}`)} />
       </div>
     </div>
   );

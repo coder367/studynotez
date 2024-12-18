@@ -7,13 +7,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import VideoCall from "@/components/study-room/VideoCall";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const StudyRoomView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [invitationCode, setInvitationCode] = useState("");
+
+  const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
@@ -124,18 +126,21 @@ const StudyRoomView = () => {
       if (participantsError) throw participantsError;
 
       // Then delete the room
-      const { error } = await supabase
+      const { error: roomError } = await supabase
         .from("study_rooms")
         .delete()
         .eq("id", id)
         .eq("created_by", currentUser.id);
 
-      if (error) throw error;
+      if (roomError) throw roomError;
 
       toast({
         title: "Success",
         description: "Room deleted successfully",
       });
+      
+      // Invalidate the rooms query to update the list
+      queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
       navigate("/dashboard/study-room");
     } catch (error: any) {
       toast({
