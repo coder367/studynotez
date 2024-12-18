@@ -31,7 +31,7 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
     },
   });
 
-  const { data: userNotes } = useQuery({
+  const { data: userNotes = [] } = useQuery({
     queryKey: ["userNotes", userId],
     queryFn: async () => {
       const { data } = await supabase
@@ -77,7 +77,6 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
     },
   });
 
-  // Ensure followers is an array and check if currentUser is following
   const isFollowing = Array.isArray(followers) && followers.some(f => f.follower_id === currentUserId);
 
   const handleFollow = async () => {
@@ -165,49 +164,39 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
         )}
       </div>
 
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Followers</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.isArray(followers) && followers.map((follow) => (
-            <Card key={follow.id} className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  {follow.follower?.full_name?.[0] || "?"}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Followers</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {Array.isArray(followers) && followers.map((follow) => (
+              <Card key={follow.id} className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    {follow.follower?.full_name?.[0] || "?"}
+                  </div>
+                  <span>{follow.follower?.full_name || "Anonymous"}</span>
                 </div>
-                <span>{follow.follower?.full_name || "Anonymous"}</span>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Following</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {Array.isArray(following) && following.map((follow) => (
+              <Card key={follow.id} className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    {follow.following?.full_name?.[0] || "?"}
+                  </div>
+                  <span>{follow.following?.full_name || "Anonymous"}</span>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
-
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Notes</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {userNotes?.map((note) => (
-            <Card
-              key={note.id}
-              className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setSelectedNote(note)}
-            >
-              <h4 className="font-medium">{note.title}</h4>
-              {note.subject && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {note.subject} - {note.university || "Unknown University"}
-                </p>
-              )}
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {selectedNote && (
-        <ViewNoteModal
-          isOpen={!!selectedNote}
-          onClose={() => setSelectedNote(null)}
-          note={selectedNote}
-        />
-      )}
     </div>
   );
 };

@@ -84,8 +84,8 @@ const DashboardNavbar = () => {
 
       if (error) throw error;
 
-      // Invalidate notifications query to refetch
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      // Immediately update the local state through query invalidation
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
       // Navigate based on notification type
       switch (notification.type) {

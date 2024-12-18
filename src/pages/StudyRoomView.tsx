@@ -113,8 +113,17 @@ const StudyRoomView = () => {
 
   const handleDeleteRoom = async () => {
     try {
-      if (!currentUser) return;
+      if (!currentUser?.id) return;
       
+      // First delete all participants
+      const { error: participantsError } = await supabase
+        .from("room_participants")
+        .delete()
+        .eq("room_id", id);
+
+      if (participantsError) throw participantsError;
+
+      // Then delete the room
       const { error } = await supabase
         .from("study_rooms")
         .delete()
