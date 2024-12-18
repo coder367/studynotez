@@ -39,7 +39,7 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      return data;
+      return data || [];
     },
   });
 
@@ -77,7 +77,8 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
     },
   });
 
-  const isFollowing = followers.some(f => f.follower_id === currentUserId);
+  // Ensure followers is an array and check if currentUser is following
+  const isFollowing = Array.isArray(followers) && followers.some(f => f.follower_id === currentUserId);
 
   const handleFollow = async () => {
     if (!currentUserId) {
@@ -135,8 +136,8 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
           <div>
             <h2 className="text-2xl font-bold">{profile?.full_name || "Anonymous"}</h2>
             <div className="flex gap-4 text-sm text-muted-foreground">
-              <span>{followers.length} followers</span>
-              <span>{following.length} following</span>
+              <span>{followers?.length || 0} followers</span>
+              <span>{following?.length || 0} following</span>
             </div>
             {profile?.bio && <p className="text-muted-foreground mt-1">{profile.bio}</p>}
           </div>
@@ -164,37 +165,19 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Followers</h3>
-          <div className="space-y-2">
-            {followers.map((follow) => (
-              <Card key={follow.id} className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    {follow.follower?.full_name?.[0] || "?"}
-                  </div>
-                  <span>{follow.follower?.full_name || "Anonymous"}</span>
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Followers</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.isArray(followers) && followers.map((follow) => (
+            <Card key={follow.id} className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  {follow.follower?.full_name?.[0] || "?"}
                 </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Following</h3>
-          <div className="space-y-2">
-            {following.map((follow) => (
-              <Card key={follow.id} className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    {follow.following?.full_name?.[0] || "?"}
-                  </div>
-                  <span>{follow.following?.full_name || "Anonymous"}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
+                <span>{follow.follower?.full_name || "Anonymous"}</span>
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
 
