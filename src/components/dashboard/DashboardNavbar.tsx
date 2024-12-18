@@ -10,13 +10,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 const DashboardNavbar = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Check session on mount
   useEffect(() => {
@@ -55,6 +56,7 @@ const DashboardNavbar = () => {
           )
         `)
         .eq("user_id", session.user.id)
+        .eq("read", false)
         .order("created_at", { ascending: false })
         .limit(5);
 
@@ -73,6 +75,40 @@ const DashboardNavbar = () => {
       }
     }
   });
+
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      // Mark notification as read
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", notification.id);
+
+      if (error) throw error;
+
+      // Invalidate notifications query to refetch
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+
+      // Navigate based on notification type
+      switch (notification.type) {
+        case 'new_message':
+          navigate(`/dashboard/chat?user=${notification.data?.sender_id}`);
+          break;
+        case 'new_follower':
+          navigate(`/dashboard/profile/${notification.data?.follower_id}`);
+          break;
+        case 'new_note':
+          navigate(`/dashboard/notes`);
+          break;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark notification as read",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -110,20 +146,6 @@ const DashboardNavbar = () => {
         return `${notification.sender?.full_name || 'Someone'} uploaded a new note: ${notification.data?.title || ''}`;
       default:
         return 'New notification';
-    }
-  };
-
-  const handleNotificationClick = (notification: any) => {
-    switch (notification.type) {
-      case 'new_message':
-        navigate(`/dashboard/chat?user=${notification.data?.sender_id}`);
-        break;
-      case 'new_follower':
-        navigate(`/dashboard/profile/${notification.data?.follower_id}`);
-        break;
-      case 'new_note':
-        navigate(`/dashboard/notes`);
-        break;
     }
   };
 

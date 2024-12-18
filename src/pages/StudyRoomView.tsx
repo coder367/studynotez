@@ -86,9 +86,44 @@ const StudyRoomView = () => {
     }
   };
 
+  const handleCopyInvitationCode = () => {
+    if (room?.invitation_code) {
+      navigator.clipboard.writeText(room.invitation_code);
+      toast({
+        title: "Success",
+        description: "Invitation code copied to clipboard",
+      });
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    try {
+      const { error } = await supabase
+        .from("study_rooms")
+        .delete()
+        .eq("id", id)
+        .eq("created_by", currentUser?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Room deleted successfully",
+      });
+      navigate("/dashboard/study-room");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete room",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!room) return null;
 
   const isPrivateRoom = !room.is_public;
+  const isRoomCreator = room.created_by === currentUser?.id;
 
   return (
     <div className="container mx-auto py-6">
@@ -114,16 +149,24 @@ const StudyRoomView = () => {
             </div>
           </div>
         </div>
-        {isPrivateRoom && !participants.some(p => p.user_id === room.created_by) && (
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Enter invitation code"
-              value={invitationCode}
-              onChange={(e) => setInvitationCode(e.target.value)}
-            />
-            <Button onClick={handleJoinRoom}>Join Room</Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {isPrivateRoom && room.invitation_code && (
+            <Button
+              variant="outline"
+              onClick={handleCopyInvitationCode}
+            >
+              Copy Invitation Code
+            </Button>
+          )}
+          {isRoomCreator && (
+            <Button
+              variant="destructive"
+              onClick={handleDeleteRoom}
+            >
+              Delete Room
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

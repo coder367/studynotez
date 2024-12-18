@@ -43,21 +43,29 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
     },
   });
 
-  const { data: followers = [] } = useQuery({
-    queryKey: ["isFollowing", userId],
+  const { data: followersCount = 0 } = useQuery({
+    queryKey: ["followers", userId],
     queryFn: async () => {
-      if (!currentUserId) return [];
-      const { data } = await supabase
+      const { count } = await supabase
         .from("followers")
-        .select("*")
-        .eq("follower_id", currentUserId)
+        .select("*", { count: 'exact', head: true })
         .eq("following_id", userId);
-      return data || [];
+      return count || 0;
     },
-    enabled: !!currentUserId && currentUserId !== userId,
   });
 
-  const isFollowing = followers.length > 0;
+  const { data: followingCount = 0 } = useQuery({
+    queryKey: ["following", userId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("followers")
+        .select("*", { count: 'exact', head: true })
+        .eq("follower_id", userId);
+      return count || 0;
+    },
+  });
+
+  const isFollowing = followersCount > 0;
 
   const handleFollow = async () => {
     if (!currentUserId) {
@@ -79,7 +87,6 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
 
         if (error) throw error;
       } else {
-        // Check if the follow relationship already exists
         const { data: existingFollow } = await supabase
           .from("followers")
           .select("*")
@@ -97,7 +104,6 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
           if (error) throw error;
         }
       }
-      // Invalidate the followers query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ["isFollowing", userId] });
     } catch (error: any) {
       toast({
@@ -123,7 +129,11 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
           </div>
           <div>
             <h2 className="text-2xl font-bold">{profile?.full_name || "Anonymous"}</h2>
-            {profile?.bio && <p className="text-muted-foreground">{profile.bio}</p>}
+            <div className="flex gap-4 text-sm text-muted-foreground">
+              <span>{followersCount} followers</span>
+              <span>{followingCount} following</span>
+            </div>
+            {profile?.bio && <p className="text-muted-foreground mt-1">{profile.bio}</p>}
           </div>
         </div>
         {currentUserId && currentUserId !== userId && (

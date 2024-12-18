@@ -3,18 +3,30 @@ import { format } from "date-fns";
 interface ChatMessageProps {
   content: string;
   senderId: string | null;
+  senderName?: string;
   currentUserId: string | null;
   fileUrl?: string | null;
   fileType?: string | null;
   createdAt: string;
 }
 
-export const ChatMessage = ({ content, senderId, currentUserId, fileUrl, fileType, createdAt }: ChatMessageProps) => {
+export const ChatMessage = ({ 
+  content, 
+  senderId, 
+  senderName, 
+  currentUserId, 
+  fileUrl, 
+  fileType, 
+  createdAt 
+}: ChatMessageProps) => {
   const isOwnMessage = senderId === currentUserId;
   
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[70%] ${isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-lg p-3`}>
+        {!isOwnMessage && senderName && (
+          <p className="text-xs font-medium mb-1">{senderName}</p>
+        )}
         <div className="flex flex-row items-center gap-2">
           <p>{content}</p>
           <span className="text-xs opacity-70">

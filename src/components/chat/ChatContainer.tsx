@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,13 +17,20 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
   const [message, setMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: messages = [], refetch: refetchMessages } = useQuery({
     queryKey: ["messages", activeChat],
     queryFn: async () => {
       const query = supabase
         .from("messages")
-        .select("*")
+        .select(`
+          *,
+          sender:profiles!messages_sender_id_fkey (
+            full_name
+          )
+        `)
         .order("created_at", { ascending: true });
 
       if (activeChat === "public") {
@@ -40,26 +47,20 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
     enabled: !!currentUser,
   });
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    const channel = supabase
-      .channel('chat_messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
-        () => {
-          refetchMessages();
-        }
-      )
-      .subscribe();
+    if (scrollAreaRef.current) {
+      const scrollArea = scrollAreaRef.current;
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+  }, [messages]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refetchMessages]);
+  // Focus input when chat changes
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [activeChat]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -131,13 +132,14 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
   return (
     <>
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((msg) => (
             <ChatMessage
               key={msg.id}
               content={msg.content}
               senderId={msg.sender_id}
+              senderName={msg.sender?.full_name}
               currentUserId={currentUser}
               fileUrl={msg.file_url}
               fileType={msg.file_type}
@@ -154,6 +156,7 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
         onFileSelect={handleFileSelect}
         selectedFile={selectedFile}
         isUploading={isUploading}
+        inputRef={inputRef}
       />
     </>
   );

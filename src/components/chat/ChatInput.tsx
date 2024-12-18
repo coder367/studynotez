@@ -9,6 +9,7 @@ interface ChatInputProps {
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   selectedFile: File | null;
   isUploading: boolean;
+  inputRef?: React.RefObject<HTMLInputElement>;
 }
 
 export const ChatInput = ({
@@ -17,7 +18,8 @@ export const ChatInput = ({
   onSend,
   onFileSelect,
   selectedFile,
-  isUploading
+  isUploading,
+  inputRef
 }: ChatInputProps) => {
   return (
     <div className="border-t p-4">
@@ -39,6 +41,7 @@ export const ChatInput = ({
           <Paperclip className="h-4 w-4" />
         </Button>
         <Input
+          ref={inputRef}
           value={message}
           onChange={(e) => onMessageChange(e.target.value)}
           placeholder="Type your message..."
