@@ -8,7 +8,7 @@ import RoomHeader from "@/components/study-room/RoomHeader";
 import ParticipantsList from "@/components/study-room/ParticipantsList";
 
 const StudyRoomView = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -24,6 +24,8 @@ const StudyRoomView = () => {
   const { data: room, isError: isRoomError } = useQuery({
     queryKey: ["studyRoom", id],
     queryFn: async () => {
+      if (!id) throw new Error("Room ID is required");
+
       const { data, error } = await supabase
         .from("study_rooms")
         .select("*")
@@ -34,11 +36,14 @@ const StudyRoomView = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !!id,
   });
 
   const { data: participants = [] } = useQuery({
     queryKey: ["roomParticipants", id],
     queryFn: async () => {
+      if (!id) throw new Error("Room ID is required");
+
       const { data, error } = await supabase
         .from("room_participants")
         .select(`
@@ -54,6 +59,7 @@ const StudyRoomView = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !!id,
   });
 
   useEffect(() => {
@@ -87,9 +93,8 @@ const StudyRoomView = () => {
 
   const handleDeleteRoom = async () => {
     try {
-      if (!currentUser?.id) return;
+      if (!currentUser?.id || !id) return;
       
-      // Soft delete the room
       const { error: roomError } = await supabase
         .from("study_rooms")
         .update({ deleted_at: new Date().toISOString() })
@@ -103,7 +108,6 @@ const StudyRoomView = () => {
         description: "Room deleted successfully",
       });
       
-      // Invalidate queries to update the UI
       queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
       queryClient.invalidateQueries({ queryKey: ["studyRoom", id] });
       navigate("/dashboard/study-room");
@@ -116,7 +120,7 @@ const StudyRoomView = () => {
     }
   };
 
-  if (!room) return null;
+  if (!room || !id) return null;
 
   const isPrivateRoom = !room.is_public;
   const isRoomCreator = currentUser && room.created_by === currentUser.id;
@@ -135,7 +139,7 @@ const StudyRoomView = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <VideoCall roomId={room.id} isVoiceOnly={room.type === "focus"} />
+          <VideoCall roomId={id} isVoiceOnly={room.type === "focus"} />
         </div>
         <div>
           <ParticipantsList participants={participants} />
