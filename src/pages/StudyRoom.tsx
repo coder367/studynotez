@@ -19,7 +19,7 @@ const StudyRoomPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       return user;
     },
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 30000,
   });
 
   const { data: rooms = [] } = useQuery({
@@ -33,6 +33,7 @@ const StudyRoomPage = () => {
             count
           )
         `)
+        .is('deleted_at', null)  // Only fetch non-deleted rooms
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -42,8 +43,8 @@ const StudyRoomPage = () => {
         participants: room.room_participants?.[0]?.count || 0
       })) as StudyRoom[];
     },
-    staleTime: 5000, // Cache for 5 seconds
-    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 5000,
+    refetchInterval: 10000,
   });
 
   return (
@@ -88,6 +89,7 @@ const StudyRoomPage = () => {
             type={room.type}
             participants={room.participants}
             isPublic={room.is_public}
+            invitationCode={room.invitation_code}
           />
         ))}
       </div>
