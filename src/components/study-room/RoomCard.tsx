@@ -31,7 +31,7 @@ const RoomCard = ({
   const [code, setCode] = useState("");
 
   const handleJoinRoom = () => {
-    if (!isPublic && invitationCode) {
+    if (!isPublic) {
       setShowCodeDialog(true);
     } else {
       navigate(`/dashboard/study-room/${id}`);
