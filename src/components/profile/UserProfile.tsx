@@ -1,9 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { MessageSquare, UserPlus, UserMinus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileHeader } from "./ProfileHeader";
 import { FollowingList } from "./FollowingList";
@@ -125,7 +122,11 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
 
       <div>
         <h3 className="text-lg font-semibold mb-4">Following</h3>
-        <FollowingList following={following} onProfileClick={(id) => navigate(`/dashboard/profile/${id}`)} />
+        <FollowingList 
+          userId={userId}
+          currentUserId={currentUserId}
+          onProfileClick={(id) => navigate(`/dashboard/profile/${id}`)}
+        />
       </div>
     </div>
   );

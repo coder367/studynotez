@@ -21,7 +21,8 @@ export const FollowingList = ({ userId, currentUserId, onProfileClick }: Followi
         .from("followers")
         .select(`
           id,
-          following:following_id (
+          following_id,
+          profiles!followers_following_id_fkey (
             id,
             full_name
           )
@@ -45,13 +46,13 @@ export const FollowingList = ({ userId, currentUserId, onProfileClick }: Followi
         <Card 
           key={follow.id} 
           className="p-4 cursor-pointer hover:bg-accent/50 transition-colors"
-          onClick={() => onProfileClick(follow.following.id)}
+          onClick={() => onProfileClick(follow.profiles.id)}
         >
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              {follow.following?.full_name?.[0] || "?"}
+              {follow.profiles?.full_name?.[0] || "?"}
             </div>
-            <span>{follow.following?.full_name || "Anonymous"}</span>
+            <span>{follow.profiles?.full_name || "Anonymous"}</span>
           </div>
         </Card>
       ))}
