@@ -73,13 +73,17 @@ const Notes = () => {
   });
 
   const handleNoteClick = async (note: Note) => {
-    // Record note view activity
     await supabase.from("note_activities").insert({
       user_id: (await supabase.auth.getUser()).data.user?.id,
       note_id: note.id,
       activity_type: "view",
     });
     setSelectedNote(note);
+  };
+
+  const handleUserClick = (e: React.MouseEvent, userId: string) => {
+    e.stopPropagation(); // Prevent note modal from opening
+    navigate(`/dashboard/profile/${userId}`);
   };
 
   return (
@@ -159,7 +163,10 @@ const Notes = () => {
                       </span>
                     )}
                     {note.university && (
-                      <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full">
+                      <span 
+                        className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer"
+                        onClick={(e) => handleUserClick(e, note.user_id)}
+                      >
                         {note.university}
                       </span>
                     )}
