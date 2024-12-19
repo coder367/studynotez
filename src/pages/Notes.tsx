@@ -82,7 +82,7 @@ const Notes = () => {
   };
 
   const handleUserClick = (e: React.MouseEvent, userId: string) => {
-    e.stopPropagation(); // Prevent note modal from opening
+    e.stopPropagation();
     navigate(`/dashboard/profile/${userId}`);
   };
 
@@ -164,7 +164,7 @@ const Notes = () => {
                     )}
                     {note.university && (
                       <span 
-                        className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer"
+                        className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer hover:bg-secondary/20"
                         onClick={(e) => handleUserClick(e, note.user_id)}
                       >
                         {note.university}
