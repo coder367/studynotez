@@ -1,11 +1,44 @@
 import { Card } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FollowingListProps {
-  following: any[];
+  userId: string;
+  currentUserId?: string;
   onProfileClick: (id: string) => void;
 }
 
-export const FollowingList = ({ following, onProfileClick }: FollowingListProps) => {
+export const FollowingList = ({ userId, currentUserId, onProfileClick }: FollowingListProps) => {
+  const { data: following = [] } = useQuery({
+    queryKey: ["following", userId],
+    queryFn: async () => {
+      // Only fetch if viewing own profile
+      if (userId !== currentUserId) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from("followers")
+        .select(`
+          id,
+          following:following_id (
+            id,
+            full_name
+          )
+        `)
+        .eq("follower_id", userId);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId && !!currentUserId,
+  });
+
+  // If not viewing own profile, don't show anything
+  if (userId !== currentUserId) {
+    return null;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4">
       {Array.isArray(following) && following.map((follow) => (

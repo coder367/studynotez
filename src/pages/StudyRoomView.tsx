@@ -141,6 +141,7 @@ const StudyRoomView = () => {
       
       // Invalidate the rooms query to update the list
       queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
+      queryClient.invalidateQueries({ queryKey: ["studyRoom", id] });
       navigate("/dashboard/study-room");
     } catch (error: any) {
       toast({

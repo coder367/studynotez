@@ -19,6 +19,7 @@ const StudyRoomPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       return user;
     },
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   const { data: rooms = [] } = useQuery({
@@ -41,6 +42,8 @@ const StudyRoomPage = () => {
         participants: room.room_participants?.[0]?.count || 0
       })) as StudyRoom[];
     },
+    staleTime: 5000, // Cache for 5 seconds
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   return (
@@ -78,15 +81,14 @@ const StudyRoomPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {rooms.map((room) => (
-          <div key={room.id} className="relative">
-            <RoomCard
-              id={room.id}
-              name={room.name}
-              type={room.type}
-              participants={room.participants}
-              isPublic={room.is_public}
-            />
-          </div>
+          <RoomCard
+            key={room.id}
+            id={room.id}
+            name={room.name}
+            type={room.type}
+            participants={room.participants}
+            isPublic={room.is_public}
+          />
         ))}
       </div>
     </div>
