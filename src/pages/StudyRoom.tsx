@@ -33,7 +33,7 @@ const StudyRoomPage = () => {
             count
           )
         `)
-        .is('deleted_at', null)  // Only fetch non-deleted rooms
+        .is('deleted_at', null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

@@ -95,9 +95,18 @@ const StudyRoomView = () => {
     try {
       if (!currentUser?.id || !id) return;
       
+      // Delete the room participants first
+      const { error: participantsError } = await supabase
+        .from("room_participants")
+        .delete()
+        .eq("room_id", id);
+
+      if (participantsError) throw participantsError;
+
+      // Then delete the room
       const { error: roomError } = await supabase
         .from("study_rooms")
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq("id", id)
         .eq("created_by", currentUser.id);
 
@@ -109,7 +118,6 @@ const StudyRoomView = () => {
       });
       
       queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
-      queryClient.invalidateQueries({ queryKey: ["studyRoom", id] });
       navigate("/dashboard/study-room");
     } catch (error: any) {
       toast({

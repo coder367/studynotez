@@ -42,33 +42,28 @@ export const NotificationsMenu = () => {
   });
 
   const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("id", notificationId);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", notificationId);
 
-      if (error) throw error;
-
-      // Invalidate the notifications query to refresh the list
-      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    } catch (error: any) {
+    if (error) {
       console.error("Error marking notification as read:", error);
       toast({
         title: "Error",
         description: "Failed to mark notification as read",
         variant: "destructive",
       });
-      throw error; // Re-throw to handle in the calling function
+      throw error;
     }
+
+    await queryClient.invalidateQueries({ queryKey: ["notifications"] });
   };
 
   const handleNotificationClick = async (notification: any) => {
     try {
-      // Mark the notification as read first
       await markAsRead(notification.id);
 
-      // Then navigate based on notification type
       switch (notification.type) {
         case 'new_message':
           navigate(`/dashboard/chat?user=${notification.data?.sender_id}`);
