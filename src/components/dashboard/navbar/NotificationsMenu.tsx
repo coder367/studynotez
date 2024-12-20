@@ -1,15 +1,15 @@
-import { BellRing } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationBadge } from "./NotificationBadge";
+import { NotificationItem } from "./NotificationItem";
 
 export const NotificationsMenu = () => {
   const navigate = useNavigate();
@@ -59,15 +59,16 @@ export const NotificationsMenu = () => {
         description: "Failed to mark notification as read",
         variant: "destructive",
       });
+      throw error; // Re-throw to handle in the calling function
     }
   };
 
   const handleNotificationClick = async (notification: any) => {
     try {
-      // Mark the notification as read
+      // Mark the notification as read first
       await markAsRead(notification.id);
 
-      // Navigate based on notification type
+      // Then navigate based on notification type
       switch (notification.type) {
         case 'new_message':
           navigate(`/dashboard/chat?user=${notification.data?.sender_id}`);
@@ -88,48 +89,19 @@ export const NotificationsMenu = () => {
     }
   };
 
-  const getNotificationText = (notification: any) => {
-    switch (notification.type) {
-      case 'new_message':
-        return `New message from ${notification.sender?.full_name || 'Someone'}`;
-      case 'new_follower':
-        return `${notification.sender?.full_name || 'Someone'} started following you`;
-      case 'new_note':
-        return `${notification.sender?.full_name || 'Someone'} uploaded a new note: ${notification.data?.title || ''}`;
-      default:
-        return 'New notification';
-    }
-  };
-
-  const unreadCount = notifications.length;
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <BellRing className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium text-white flex items-center justify-center">
-              {unreadCount}
-            </span>
-          )}
-        </Button>
+        <NotificationBadge unreadCount={notifications.length} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[300px]">
         {notifications.length > 0 ? (
           notifications.map((notification) => (
-            <DropdownMenuItem
+            <NotificationItem
               key={notification.id}
-              className="cursor-pointer"
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <div className="flex flex-col">
-                <span className="font-medium">{getNotificationText(notification)}</span>
-                <span className="text-sm text-muted-foreground">
-                  {new Date(notification.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            </DropdownMenuItem>
+              notification={notification}
+              onNotificationClick={handleNotificationClick}
+            />
           ))
         ) : (
           <DropdownMenuItem disabled>No new notifications</DropdownMenuItem>
