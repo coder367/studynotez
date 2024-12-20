@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileHeader } from "./ProfileHeader";
 import { FollowingList } from "./FollowingList";
+import { UserNotes } from "./UserNotes";
 
 interface UserProfileProps {
   userId: string;
@@ -120,13 +121,22 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
         onChat={handleChat}
       />
 
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Following</h3>
-        <FollowingList 
-          userId={userId}
-          currentUserId={currentUserId}
-          onProfileClick={(id) => navigate(`/dashboard/profile/${id}`)}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <h3 className="text-lg font-semibold mb-4">Notes</h3>
+          <UserNotes userId={userId} />
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Following</h3>
+          <div className="bg-card rounded-lg p-4">
+            <FollowingList 
+              userId={userId}
+              currentUserId={currentUserId}
+              onProfileClick={(id) => navigate(`/dashboard/profile/${id}`)}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
