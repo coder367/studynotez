@@ -54,7 +54,6 @@ const RecentNotes = () => {
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        // Filter out duplicate notes, keeping only the most recent view
         const uniqueNotes = data.reduce((acc: RecentNote[], current: RecentNote) => {
           const exists = acc.find(item => item.notes.id === current.notes.id);
           if (!exists) {
@@ -79,8 +78,9 @@ const RecentNotes = () => {
     setSelectedNote(note);
   };
 
-  const handleUserClick = (userId: string) => {
-    navigate(`/dashboard/profile/${userId}`);
+  const handleUniversityClick = (e: React.MouseEvent, university: string) => {
+    e.stopPropagation();
+    navigate(`/dashboard/notes?university=${encodeURIComponent(university)}`);
   };
 
   return (
@@ -99,14 +99,19 @@ const RecentNotes = () => {
               <div>
                 <p className="font-medium">{activity.notes.title}</p>
                 {activity.notes.subject && (
-                  <p 
-                    className="text-sm text-muted-foreground hover:text-primary cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUserClick(activity.notes.user_id);
-                    }}
-                  >
-                    {activity.notes.subject} - {activity.notes.university || "Unknown University"}
+                  <p className="text-sm text-muted-foreground">
+                    <span>{activity.notes.subject}</span>
+                    {activity.notes.university && (
+                      <>
+                        {" - "}
+                        <span 
+                          className="hover:text-primary cursor-pointer"
+                          onClick={(e) => handleUniversityClick(e, activity.notes.university || "")}
+                        >
+                          {activity.notes.university}
+                        </span>
+                      </>
+                    )}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground">

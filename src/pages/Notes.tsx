@@ -81,9 +81,9 @@ const Notes = () => {
     setSelectedNote(note);
   };
 
-  const handleUserClick = (e: React.MouseEvent, userId: string) => {
+  const handleUniversityClick = (e: React.MouseEvent, university: string) => {
     e.stopPropagation();
-    navigate(`/dashboard/profile/${userId}`);
+    navigate(`/dashboard/notes?university=${encodeURIComponent(university)}`);
   };
 
   return (
@@ -165,7 +165,7 @@ const Notes = () => {
                     {note.university && (
                       <span 
                         className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer hover:bg-secondary/20"
-                        onClick={(e) => handleUserClick(e, note.user_id)}
+                        onClick={(e) => handleUniversityClick(e, note.university)}
                       >
                         {note.university}
                       </span>
