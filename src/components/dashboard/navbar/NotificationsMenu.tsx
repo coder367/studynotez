@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +17,9 @@ export const NotificationsMenu = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -38,11 +41,12 @@ export const NotificationsMenu = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 10000, // Reduced polling interval for better performance
+    refetchInterval: 10000,
   });
 
   const markAsRead = async (notification: any) => {
     try {
+      setIsProcessing(true);
       const { error } = await supabase
         .from("notifications")
         .update({ read: true })
@@ -51,44 +55,57 @@ export const NotificationsMenu = () => {
       if (error) throw error;
 
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      
-      toast({
-        title: "Success",
-        description: "Notification marked as read",
-      });
     } catch (error: any) {
       console.error("Error marking notification as read:", error);
-      toast({
-        title: "Error",
-        description: "Failed to mark notification as read",
-        variant: "destructive",
-      });
+      throw error;
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleNotificationClick = async (notification: any) => {
     try {
+      setIsProcessing(true);
       await markAsRead(notification);
 
       switch (notification.type) {
         case 'new_message':
-          navigate(`/dashboard/chat?user=${notification.data?.sender_id}`);
+          if (!notification.data?.sender_id) {
+            throw new Error("Message sender not found");
+          }
+          navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
           break;
         case 'new_follower':
-          navigate(`/dashboard/profile/${notification.data?.follower_id}`);
+          if (!notification.data?.follower_id) {
+            throw new Error("Follower not found");
+          }
+          navigate(`/dashboard/profile/${notification.data.follower_id}`);
           break;
         case 'new_note':
+          if (!notification.data?.note_id) {
+            throw new Error("Note not found");
+          }
           navigate(`/dashboard/notes`);
           break;
+        default:
+          throw new Error("Invalid notification type");
       }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to process notification",
+        description: error.message || "Could not process notification",
         variant: "destructive",
       });
     }
   };
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load notifications",
+      variant: "destructive",
+    });
+  }
 
   return (
     <DropdownMenu>
@@ -97,7 +114,10 @@ export const NotificationsMenu = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[300px]">
         {isLoading ? (
-          <DropdownMenuItem disabled>Loading notifications...</DropdownMenuItem>
+          <DropdownMenuItem disabled className="flex items-center justify-center p-4">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            Loading notifications...
+          </DropdownMenuItem>
         ) : notifications.length > 0 ? (
           notifications.map((notification) => (
             <NotificationItem
@@ -108,7 +128,9 @@ export const NotificationsMenu = () => {
             />
           ))
         ) : (
-          <DropdownMenuItem disabled>No new notifications</DropdownMenuItem>
+          <DropdownMenuItem disabled className="text-center p-4">
+            No new notifications
+          </DropdownMenuItem>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

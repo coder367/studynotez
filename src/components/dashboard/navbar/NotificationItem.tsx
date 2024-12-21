@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 interface NotificationItemProps {
   notification: any;
@@ -10,6 +11,9 @@ interface NotificationItemProps {
 }
 
 export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRead }: NotificationItemProps) => {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
   const getNotificationText = (notification: any) => {
     switch (notification.type) {
       case 'new_message':
@@ -23,6 +27,41 @@ export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRe
     }
   };
 
+  const handleClick = async () => {
+    try {
+      setIsLoading(true);
+      await onNotificationClick(notification);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Could not load notification content. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setIsLoading(true);
+      await onMarkAsRead(notification);
+      toast({
+        title: "Success",
+        description: "Notification marked as read",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Could not mark notification as read. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <DropdownMenuItem
       key={notification.id}
@@ -31,7 +70,7 @@ export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRe
       <div className="flex items-center justify-between w-full p-2">
         <div 
           className="flex flex-col flex-1 mr-2"
-          onClick={() => onNotificationClick(notification)}
+          onClick={handleClick}
         >
           <span className="font-medium">{getNotificationText(notification)}</span>
           <span className="text-sm text-muted-foreground">
@@ -43,12 +82,14 @@ export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRe
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMarkAsRead(notification);
-            }}
+            onClick={handleMarkAsRead}
+            disabled={isLoading}
           >
-            <Check className="h-4 w-4" />
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
           </Button>
         )}
       </div>
