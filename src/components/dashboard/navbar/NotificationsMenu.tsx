@@ -12,12 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationBadge } from "./NotificationBadge";
 import { NotificationItem } from "./NotificationItem";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const NotificationsMenu = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ["notifications"],
@@ -112,7 +114,10 @@ export const NotificationsMenu = () => {
       <DropdownMenuTrigger asChild>
         <NotificationBadge unreadCount={notifications.length} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[300px]">
+      <DropdownMenuContent 
+        align="end" 
+        className={`w-[300px] md:w-[400px] max-h-[80vh] overflow-y-auto ${isMobile ? 'mx-4' : ''}`}
+      >
         {isLoading ? (
           <DropdownMenuItem disabled className="flex items-center justify-center p-4">
             <Loader2 className="h-4 w-4 animate-spin mr-2" />

@@ -6,10 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationsMenu } from "./navbar/NotificationsMenu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const DashboardNavbar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -53,22 +55,23 @@ const DashboardNavbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+      <div className="container flex h-14 items-center px-4 md:px-6">
         <div className="flex items-center gap-2 md:gap-4">
           <SidebarTrigger />
-          <span className="text-lg font-semibold">StudyNotes</span>
+          <span className="text-lg font-semibold hidden md:inline">StudyNotes</span>
+          <span className="text-lg font-semibold md:hidden">SN</span>
         </div>
 
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex flex-1 items-center justify-end space-x-2 md:space-x-4">
           <NotificationsMenu />
           <Button
             variant="ghost"
-            size="sm"
+            size={isMobile ? "icon" : "sm"}
             onClick={handleLogout}
             className="flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />
-            <span>Logout</span>
+            {!isMobile && <span>Logout</span>}
           </Button>
         </div>
       </div>
