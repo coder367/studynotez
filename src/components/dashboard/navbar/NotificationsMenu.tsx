@@ -43,8 +43,30 @@ export const NotificationsMenu = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 10000,
+    refetchInterval: 5000, // Poll every 5 seconds
   });
+
+  // Subscribe to real-time notifications
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const markAsRead = async (notification: any) => {
     try {
@@ -57,57 +79,22 @@ export const NotificationsMenu = () => {
       if (error) throw error;
 
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      
+      toast({
+        title: "Success",
+        description: "Notification marked as read",
+      });
     } catch (error: any) {
       console.error("Error marking notification as read:", error);
-      throw error;
+      toast({
+        title: "Error",
+        description: "Could not mark notification as read",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
   };
-
-  const handleNotificationClick = async (notification: any) => {
-    try {
-      setIsProcessing(true);
-      await markAsRead(notification);
-
-      switch (notification.type) {
-        case 'new_message':
-          if (!notification.data?.sender_id) {
-            throw new Error("Message sender not found");
-          }
-          navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
-          break;
-        case 'new_follower':
-          if (!notification.data?.follower_id) {
-            throw new Error("Follower not found");
-          }
-          navigate(`/dashboard/profile/${notification.data.follower_id}`);
-          break;
-        case 'new_note':
-          if (!notification.data?.note_id) {
-            throw new Error("Note not found");
-          }
-          navigate(`/dashboard/notes`);
-          break;
-        default:
-          throw new Error("Invalid notification type");
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Could not process notification",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (error) {
-    toast({
-      title: "Error",
-      description: "Failed to load notifications",
-      variant: "destructive",
-    });
-  }
 
   return (
     <DropdownMenu>
@@ -123,6 +110,10 @@ export const NotificationsMenu = () => {
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
             Loading notifications...
           </DropdownMenuItem>
+        ) : error ? (
+          <DropdownMenuItem disabled className="text-center p-4 text-destructive">
+            Error loading notifications
+          </DropdownMenuItem>
         ) : notifications.length > 0 ? (
           notifications.map((notification) => (
             <NotificationItem
@@ -130,6 +121,7 @@ export const NotificationsMenu = () => {
               notification={notification}
               onNotificationClick={handleNotificationClick}
               onMarkAsRead={markAsRead}
+              isProcessing={isProcessing}
             />
           ))
         ) : (

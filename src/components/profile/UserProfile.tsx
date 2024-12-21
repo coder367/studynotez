@@ -64,6 +64,29 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
 
   const isFollowing = Array.isArray(followers) && followers.some(f => f.follower_id === currentUserId);
 
+  // Subscribe to real-time follow updates
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('public:followers')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'followers',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["followers", userId] });
+          queryClient.invalidateQueries({ queryKey: ["following", userId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, userId]);
+
   const handleFollow = async () => {
     if (!currentUserId) {
       toast({
@@ -83,6 +106,11 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
           .eq("following_id", userId);
 
         if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Unfollowed successfully",
+        });
       } else {
         const { error } = await supabase
           .from("followers")
@@ -92,9 +120,12 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
           });
 
         if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Following successfully",
+        });
       }
-      queryClient.invalidateQueries({ queryKey: ["followers", userId] });
-      queryClient.invalidateQueries({ queryKey: ["following", userId] });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -102,10 +133,6 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleChat = () => {
-    navigate(`/dashboard/chat?user=${userId}`);
   };
 
   return (
@@ -118,7 +145,7 @@ export const UserProfile = ({ userId, currentUserId }: UserProfileProps) => {
         userId={userId}
         isFollowing={isFollowing}
         onFollow={handleFollow}
-        onChat={handleChat}
+        onChat={() => navigate(`/dashboard/chat?user=${userId}`)}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

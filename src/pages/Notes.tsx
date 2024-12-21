@@ -35,7 +35,7 @@ const Notes = () => {
       let query = supabase.from("notes").select("*");
 
       if (searchQuery) {
-        query = query.ilike("title", `%${searchQuery}%`);
+        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,subject.ilike.%${searchQuery}%,university.ilike.%${searchQuery}%`);
       }
       if (selectedSubject) {
         query = query.eq("subject", selectedSubject);
