@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -18,7 +18,7 @@ export const NotificationsMenu = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const { data: notifications = [], isLoading, error } = useQuery({
@@ -32,7 +32,8 @@ export const NotificationsMenu = () => {
         .select(`
           *,
           sender:profiles!notifications_user_id_fkey (
-            full_name
+            full_name,
+            id
           )
         `)
         .eq("user_id", session.user.id)
@@ -43,26 +44,26 @@ export const NotificationsMenu = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: 5000,
   });
 
   const handleNotificationClick = async (notification: any) => {
     try {
-      setIsProcessing(true);
       switch (notification.type) {
         case 'new_message':
-          navigate(`/dashboard/chat?user=${notification.sender?.id}`);
+          navigate(`/dashboard/chat/${notification.sender?.id}`);
           break;
         case 'new_follower':
           navigate(`/dashboard/profile/${notification.data?.follower_id}`);
           break;
         case 'new_note':
-          navigate(`/dashboard/notes?note=${notification.data?.note_id}`);
+          navigate(`/dashboard/notes/${notification.data?.note_id}`);
           break;
         default:
           console.log('Unknown notification type:', notification.type);
       }
       await markAsRead(notification);
+      setIsOpen(false);
     } catch (error: any) {
       console.error("Error handling notification click:", error);
       toast({
@@ -70,14 +71,11 @@ export const NotificationsMenu = () => {
         description: "Could not process notification",
         variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   const markAsRead = async (notification: any) => {
     try {
-      setIsProcessing(true);
       const { error } = await supabase
         .from("notifications")
         .update({ read: true })
@@ -98,13 +96,11 @@ export const NotificationsMenu = () => {
         description: "Could not mark notification as read",
         variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <NotificationBadge unreadCount={notifications.length} />
       </DropdownMenuTrigger>
