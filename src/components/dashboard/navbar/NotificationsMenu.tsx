@@ -46,27 +46,34 @@ export const NotificationsMenu = () => {
     refetchInterval: 5000, // Poll every 5 seconds
   });
 
-  // Subscribe to real-time notifications
-  React.useEffect(() => {
-    const channel = supabase
-      .channel('public:notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["notifications"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      setIsProcessing(true);
+      switch (notification.type) {
+        case 'new_message':
+          navigate(`/dashboard/chat?user=${notification.sender?.id}`);
+          break;
+        case 'new_follower':
+          navigate(`/dashboard/profile/${notification.data?.follower_id}`);
+          break;
+        case 'new_note':
+          navigate(`/dashboard/notes?note=${notification.data?.note_id}`);
+          break;
+        default:
+          console.log('Unknown notification type:', notification.type);
+      }
+      await markAsRead(notification);
+    } catch (error: any) {
+      console.error("Error handling notification click:", error);
+      toast({
+        title: "Error",
+        description: "Could not process notification",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const markAsRead = async (notification: any) => {
     try {
@@ -121,7 +128,6 @@ export const NotificationsMenu = () => {
               notification={notification}
               onNotificationClick={handleNotificationClick}
               onMarkAsRead={markAsRead}
-              isProcessing={isProcessing}
             />
           ))
         ) : (
