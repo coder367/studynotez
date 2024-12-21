@@ -16,7 +16,7 @@ export const NotificationsMenu = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -38,31 +38,37 @@ export const NotificationsMenu = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 10000, // Reduced polling interval for better performance
   });
 
-  const markAsRead = async (notificationId: string) => {
-    const { error } = await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("id", notificationId);
+  const markAsRead = async (notification: any) => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", notification.id);
 
-    if (error) {
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      
+      toast({
+        title: "Success",
+        description: "Notification marked as read",
+      });
+    } catch (error: any) {
       console.error("Error marking notification as read:", error);
       toast({
         title: "Error",
         description: "Failed to mark notification as read",
         variant: "destructive",
       });
-      throw error;
     }
-
-    await queryClient.invalidateQueries({ queryKey: ["notifications"] });
   };
 
   const handleNotificationClick = async (notification: any) => {
     try {
-      await markAsRead(notification.id);
+      await markAsRead(notification);
 
       switch (notification.type) {
         case 'new_message':
@@ -90,12 +96,15 @@ export const NotificationsMenu = () => {
         <NotificationBadge unreadCount={notifications.length} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[300px]">
-        {notifications.length > 0 ? (
+        {isLoading ? (
+          <DropdownMenuItem disabled>Loading notifications...</DropdownMenuItem>
+        ) : notifications.length > 0 ? (
           notifications.map((notification) => (
             <NotificationItem
               key={notification.id}
               notification={notification}
               onNotificationClick={handleNotificationClick}
+              onMarkAsRead={markAsRead}
             />
           ))
         ) : (

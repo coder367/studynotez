@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { StudyRoomType } from "@/types/study-room";
 
 interface RoomCardProps {
@@ -15,6 +17,7 @@ interface RoomCardProps {
   participants: number;
   isPublic?: boolean;
   invitationCode?: string | null;
+  createdBy: string;
 }
 
 const RoomCard = ({ 
@@ -23,15 +26,26 @@ const RoomCard = ({
   type, 
   participants, 
   isPublic = false,
-  invitationCode 
+  invitationCode,
+  createdBy
 }: RoomCardProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   const [code, setCode] = useState("");
 
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+  });
+
+  const isRoomCreator = currentUser?.id === createdBy;
+
   const handleJoinRoom = () => {
-    if (!isPublic) {
+    if (!isPublic && !isRoomCreator) {
       setShowCodeDialog(true);
     } else {
       navigate(`/dashboard/study-room/${id}`);

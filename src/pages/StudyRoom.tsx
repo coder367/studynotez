@@ -22,7 +22,7 @@ const StudyRoomPage = () => {
     staleTime: 30000,
   });
 
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [], isLoading } = useQuery({
     queryKey: ["studyRooms"],
     queryFn: async () => {
       const { data: rooms, error } = await supabase
@@ -33,7 +33,6 @@ const StudyRoomPage = () => {
             count
           )
         `)
-        .is('deleted_at', null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -44,8 +43,11 @@ const StudyRoomPage = () => {
       })) as StudyRoom[];
     },
     staleTime: 5000,
-    refetchInterval: 10000,
   });
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-[50vh]">Loading...</div>;
+  }
 
   return (
     <div className="container mx-auto py-6">
@@ -90,6 +92,7 @@ const StudyRoomPage = () => {
             participants={room.participants}
             isPublic={room.is_public}
             invitationCode={room.invitation_code}
+            createdBy={room.created_by}
           />
         ))}
       </div>
