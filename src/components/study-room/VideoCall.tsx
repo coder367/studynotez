@@ -1,20 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Video, Mic, MicOff, VideoOff, UserMinus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Progress } from "@/components/ui/progress";
-
-interface VideoCallProps {
-  roomId: string;
-  isVoiceOnly?: boolean;
-}
-
-interface Participant {
-  id: string;
-  stream?: MediaStream;
-  videoRef?: HTMLVideoElement | null;
-}
+import { Participant, VideoCallProps } from "@/types/video-call";
+import { ParticipantVideo } from "./ParticipantVideo";
+import { Controls } from "./Controls";
+import { AudioLevelIndicator } from "./AudioLevelIndicator";
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
@@ -53,7 +43,7 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
       try {
         const constraints = {
           video: !isVoiceOnly,
-          audio: !isVoiceOnly, // Only enable audio for study rooms
+          audio: !isVoiceOnly,
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -63,7 +53,6 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
           localVideoRef.current.srcObject = stream;
         }
 
-        // Initialize audio analysis for study rooms
         if (!isVoiceOnly) {
           audioContext.current = new AudioContext();
           analyser.current = audioContext.current.createAnalyser();
@@ -84,7 +73,6 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
           updateAudioLevel();
         }
 
-        // Subscribe to room participants
         const channel = supabase.channel(`room:${roomId}`)
           .on('presence', { event: 'sync' }, () => {
             const state = channel.presenceState();
@@ -174,12 +162,10 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   };
 
   const handleLeaveCall = async () => {
-    // Stop all tracks
     if (localStream.current) {
       localStream.current.getTracks().forEach(track => track.stop());
     }
 
-    // Remove from room participants
     await supabase
       .from("room_participants")
       .delete()
@@ -192,77 +178,35 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Local video */}
-        <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2 left-2 bg-black/50 px-2 py-1 rounded text-white text-sm">
-            {userName} (You)
-          </div>
-        </div>
+        <ParticipantVideo
+          participant={{ id: "local", stream: localStream.current }}
+          isLocal={true}
+          userName={userName}
+        />
 
-        {/* Remote participants */}
         {Array.from(participants.values()).map((participant) => (
-          <div key={participant.id} className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-            {participant.stream ? (
-              <video
-                ref={(el) => {
-                  if (el && participant.stream) {
-                    el.srcObject = participant.stream;
-                  }
-                }}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <span className="text-muted-foreground">{participant.username || 'Anonymous'}</span>
-              </div>
-            )}
-          </div>
+          <ParticipantVideo
+            key={participant.id}
+            participant={participant}
+            userName={participant.username}
+          />
         ))}
       </div>
 
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-background/80 backdrop-blur-sm p-2 rounded-lg shadow-lg">
-        {!isVoiceOnly && (
-          <Button
-            variant="secondary"
-            size="icon"
-            onClick={toggleAudio}
-            className={!isAudioEnabled ? "bg-destructive hover:bg-destructive" : ""}
-          >
-            {isAudioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-          </Button>
-        )}
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={toggleVideo}
-          className={!isVideoEnabled ? "bg-destructive hover:bg-destructive" : ""}
-        >
-          {isVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-        </Button>
-        <Button
-          variant="destructive"
-          size="icon"
-          onClick={handleLeaveCall}
-        >
-          <UserMinus className="h-4 w-4" />
-        </Button>
-      </div>
+      <Controls
+        isVoiceOnly={isVoiceOnly}
+        isAudioEnabled={isAudioEnabled}
+        isVideoEnabled={isVideoEnabled}
+        onToggleAudio={toggleAudio}
+        onToggleVideo={toggleVideo}
+        onLeaveCall={handleLeaveCall}
+      />
 
-      {isAudioEnabled && !isVoiceOnly && (
-        <div className="flex items-center gap-2 px-4">
-          <Mic className="h-4 w-4 text-muted-foreground" />
-          <Progress value={audioLevel} className="h-2" />
-        </div>
-      )}
+      <AudioLevelIndicator
+        isAudioEnabled={isAudioEnabled}
+        audioLevel={audioLevel}
+        isVoiceOnly={isVoiceOnly}
+      />
     </div>
   );
 };
