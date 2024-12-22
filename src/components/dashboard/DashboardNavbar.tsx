@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -12,12 +12,6 @@ const DashboardNavbar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-    }
-    return 'light';
-  });
 
   useEffect(() => {
     const checkSession = async () => {
@@ -59,12 +53,6 @@ const DashboardNavbar = () => {
     }
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark');
-  };
-
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center px-4 md:px-6">
@@ -75,18 +63,6 @@ const DashboardNavbar = () => {
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2 md:space-x-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="relative"
-          >
-            {theme === 'light' ? (
-              <Moon className="h-5 w-5 transition-all" />
-            ) : (
-              <Sun className="h-5 w-5 transition-all" />
-            )}
-          </Button>
           <NotificationsMenu />
           <Button
             variant="ghost"

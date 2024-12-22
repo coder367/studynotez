@@ -14,6 +14,8 @@ export interface ParticipantVideoProps {
   participant: Participant;
   isLocal?: boolean;
   userName?: string;
+  audioLevel?: number;
+  isAudioEnabled?: boolean;
 }
 
 export interface ControlsProps {

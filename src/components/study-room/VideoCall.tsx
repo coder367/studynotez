@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Participant, VideoCallProps } from "@/types/video-call";
 import { ParticipantVideo } from "./ParticipantVideo";
 import { Controls } from "./Controls";
-import { AudioLevelIndicator } from "./AudioLevelIndicator";
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
@@ -188,6 +187,8 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
           participant={{ id: "local", stream: localStream.current }}
           isLocal={true}
           userName={userName}
+          audioLevel={audioLevel}
+          isAudioEnabled={isAudioEnabled && !isVoiceOnly}
         />
 
         {Array.from(participants.values()).map((participant) => (
@@ -195,6 +196,8 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
             key={participant.id}
             participant={participant}
             userName={participant.username}
+            audioLevel={0} // Remote participants' audio level would need WebRTC data
+            isAudioEnabled={!isVoiceOnly}
           />
         ))}
       </div>
@@ -206,12 +209,6 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         onToggleAudio={toggleAudio}
         onToggleVideo={toggleVideo}
         onLeaveCall={handleLeaveCall}
-      />
-
-      <AudioLevelIndicator
-        isAudioEnabled={isAudioEnabled}
-        audioLevel={audioLevel}
-        isVoiceOnly={isVoiceOnly}
       />
     </div>
   );
