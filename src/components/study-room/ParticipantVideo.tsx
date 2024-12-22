@@ -26,7 +26,7 @@ export const ParticipantVideo = ({ participant, isLocal, userName, audioLevel, i
         {participant.username || userName || 'Anonymous'} {isLocal && '(You)'}
       </div>
       {isAudioEnabled && audioLevel !== undefined && (
-        <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2 px-2">
+        <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2 px-2 bg-black/50 rounded">
           <Mic className="h-4 w-4 text-white" />
           <Progress value={audioLevel} className="h-2" />
         </div>

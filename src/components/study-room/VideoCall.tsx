@@ -17,10 +17,16 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     isVideoEnabled,
     audioLevel,
     toggleAudio,
-    toggleVideo
+    toggleVideo,
+    initializeMedia
   } = useMediaStream(isVoiceOnly);
   
   const { participants } = useRoomPresence(roomId, userName);
+
+  // Re-initialize media when isVoiceOnly changes
+  useEffect(() => {
+    initializeMedia();
+  }, [isVoiceOnly, initializeMedia]);
 
   useEffect(() => {
     const fetchUserName = async () => {
