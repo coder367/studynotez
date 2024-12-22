@@ -28,20 +28,24 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
         .select(`
           *,
           sender:profiles!messages_sender_id_fkey (
-            full_name
+            full_name,
+            avatar_url
           )
         `)
         .order("created_at", { ascending: true });
 
+      // For public chat, get messages with null receiver_id
       if (activeChat === "public") {
         query.is("receiver_id", null);
       } else if (activeChat) {
+        // For private chat, get messages between the two users
         query.or(
           `and(sender_id.eq.${currentUser},receiver_id.eq.${(activeChat as any).id}),and(sender_id.eq.${(activeChat as any).id},receiver_id.eq.${currentUser})`
         );
       }
 
-      const { data } = await query;
+      const { data, error } = await query;
+      if (error) throw error;
       return data || [];
     },
     enabled: !!currentUser,
@@ -128,6 +132,7 @@ useEffect(() => {
         fileType = selectedFile.type;
       }
 
+      // Create the message
       const { error } = await supabase
         .from("messages")
         .insert({
@@ -139,6 +144,20 @@ useEffect(() => {
         });
 
       if (error) throw error;
+
+      // Create notification for private messages
+      if (activeChat !== "public") {
+        await supabase
+          .from("notifications")
+          .insert({
+            user_id: (activeChat as any).id,
+            type: "new_message",
+            data: {
+              sender_id: currentUser,
+              message: message.trim()
+            }
+          });
+      }
 
       setMessage("");
       setSelectedFile(null);
