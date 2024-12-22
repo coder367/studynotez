@@ -36,14 +36,29 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     };
 
     fetchUserName();
+
+    // Cleanup function to stop all tracks when component unmounts
+    return () => {
+      if (localStream.current) {
+        localStream.current.getTracks().forEach(track => {
+          track.stop();
+        });
+      }
+    };
   }, []);
 
   useEffect(() => {
     const initializeMedia = async () => {
       try {
+        if (localStream.current) {
+          localStream.current.getTracks().forEach(track => {
+            track.stop();
+          });
+        }
+
         const constraints = {
-          video: !isVoiceOnly,
-          audio: !isVoiceOnly,
+          video: !isVoiceOnly && isVideoEnabled,
+          audio: !isVoiceOnly && isAudioEnabled,
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -107,19 +122,7 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     };
 
     initializeMedia();
-
-    return () => {
-      if (localStream.current) {
-        localStream.current.getTracks().forEach(track => track.stop());
-      }
-      if (audioContext.current) {
-        audioContext.current.close();
-      }
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-      }
-    };
-  }, [roomId, isVoiceOnly, userName]);
+  }, [roomId, isVoiceOnly, userName, isVideoEnabled, isAudioEnabled]);
 
   const updateParticipants = (state: any) => {
     const newParticipants = new Map(participants);
@@ -162,8 +165,11 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   };
 
   const handleLeaveCall = async () => {
+    // Stop all tracks before leaving
     if (localStream.current) {
-      localStream.current.getTracks().forEach(track => track.stop());
+      localStream.current.getTracks().forEach(track => {
+        track.stop();
+      });
     }
 
     await supabase

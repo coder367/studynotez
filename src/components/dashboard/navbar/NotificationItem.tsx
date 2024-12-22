@@ -22,7 +22,9 @@ export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRe
       case 'new_follower':
         return `${notification.sender?.full_name || 'Someone'} started following you`;
       case 'new_note':
-        return `${notification.sender?.full_name || 'Someone'} uploaded a new note: ${notification.data?.title || ''}`;
+        return `${notification.sender?.full_name || 'Someone'} shared a new note: ${notification.data?.title || ''}`;
+      case 'chat_mention':
+        return `${notification.sender?.full_name || 'Someone'} mentioned you in chat`;
       default:
         return 'New notification';
     }
@@ -48,10 +50,6 @@ export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRe
     try {
       setIsLoading(true);
       await onMarkAsRead(notification);
-      toast({
-        title: "Success",
-        description: "Notification marked as read",
-      });
     } catch (error: any) {
       toast({
         title: "Error",

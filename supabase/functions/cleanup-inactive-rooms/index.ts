@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     // Get rooms with no activity in the last 4 hours
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
     
-    // Get inactive rooms
+    // Get inactive rooms (both new and existing)
     const { data: inactiveRooms, error: roomsError } = await supabase
       .from('study_rooms')
       .select('id')
@@ -49,6 +49,15 @@ Deno.serve(async (req) => {
 
       console.log(`Cleaned up ${inactiveRooms.length} inactive rooms`)
     }
+
+    // Also clean up any existing rooms that are older than 4 hours
+    const { error: existingRoomsError } = await supabase
+      .from('study_rooms')
+      .update({ deleted_at: new Date().toISOString() })
+      .is('deleted_at', null)
+      .lt('created_at', fourHoursAgo)
+
+    if (existingRoomsError) throw existingRoomsError
 
     return new Response(
       JSON.stringify({ message: 'Cleanup completed successfully' }),

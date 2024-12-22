@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 
 interface ChatMessageProps {
   content: string;
@@ -21,16 +21,27 @@ export const ChatMessage = ({
 }: ChatMessageProps) => {
   const isOwnMessage = senderId === currentUserId;
   
+  const formatMessageDate = (date: string) => {
+    const messageDate = new Date(date);
+    if (isToday(messageDate)) {
+      return `Today at ${format(messageDate, 'HH:mm')}`;
+    } else if (isYesterday(messageDate)) {
+      return `Yesterday at ${format(messageDate, 'HH:mm')}`;
+    } else {
+      return format(messageDate, 'MMM d, yyyy HH:mm');
+    }
+  };
+
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[70%] ${isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-lg p-3`}>
-        {!isOwnMessage && senderName && (
-          <p className="text-xs font-medium mb-1">{senderName}</p>
-        )}
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-col gap-1">
+          {!isOwnMessage && senderName && (
+            <p className="text-xs font-medium">{senderName}</p>
+          )}
           <p>{content}</p>
           <span className="text-xs opacity-70">
-            {format(new Date(createdAt), 'HH:mm')}
+            {formatMessageDate(createdAt)}
           </span>
         </div>
         {fileUrl && (
