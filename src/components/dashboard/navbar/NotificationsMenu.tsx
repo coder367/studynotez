@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +37,6 @@ const NotificationsMenu = () => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleNotificationClick = async (notification: any) => {
-    // Handle notification click
     console.log("Notification clicked:", notification);
   };
 
@@ -55,13 +55,16 @@ const NotificationsMenu = () => {
   const handleDialogOpen = async (open: boolean) => {
     setIsOpen(open);
     
-    if (open) {
+    if (open && unreadCount > 0) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       // Mark all notifications as read when opening the dialog
       const { error } = await supabase
         .from("notifications")
         .update({ read: true })
         .eq("read", false)
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id);
+        .eq("user_id", user.id);
 
       if (error) throw error;
       
@@ -89,6 +92,7 @@ const NotificationsMenu = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Notifications</DialogTitle>
+            <DialogDescription>Your recent notifications</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-4">
             {notifications.length > 0 ? (
