@@ -10,7 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationItem from "./NotificationItem";
-import { NotificationBadge } from "./NotificationBadge";
+import NotificationBadge from "./NotificationBadge";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
