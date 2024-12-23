@@ -6,7 +6,7 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
 
-  const initializeStream = useCallback(async () => {
+  const initializeMedia = useCallback(async () => {
     try {
       const constraints = {
         audio: !isVoiceOnly,
@@ -40,7 +40,7 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
     }
   }, [isVoiceOnly]);
 
-  const cleanup = useCallback(() => {
+  const stopAllTracks = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => {
         track.stop();
@@ -51,11 +51,6 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       setAudioLevel(0);
     }
   }, [stream]);
-
-  useEffect(() => {
-    initializeStream();
-    return cleanup;
-  }, [initializeStream, cleanup]);
 
   const toggleAudio = useCallback(() => {
     if (stream && !isVoiceOnly) {
@@ -78,12 +73,13 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   }, [stream]);
 
   return {
-    stream,
+    localStream: stream,  // Changed from 'stream' to 'localStream' to match VideoCall usage
     isAudioEnabled,
     isVideoEnabled,
     audioLevel,
     toggleAudio,
     toggleVideo,
-    cleanup,
+    initializeMedia,  // Added this
+    stopAllTracks,    // Added this
   };
 };
