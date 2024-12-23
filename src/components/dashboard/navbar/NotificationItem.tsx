@@ -1,97 +1,63 @@
-import { useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+import { Check } from "lucide-react";
 
 interface NotificationItemProps {
-  notification: any;
-  onNotificationClick: (notification: any) => Promise<void>;
-  onMarkAsRead: (notification: any) => Promise<void>;
+  notification: {
+    id: string;
+    type: string;
+    data: any;
+    created_at: string;
+    read: boolean;
+  };
+  onNotificationClick: (notification: any) => void;
+  onMarkAsRead: (notification: any) => void;
 }
 
-const NotificationItem = ({ notification, onNotificationClick, onMarkAsRead }: NotificationItemProps) => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const getNotificationText = (notification: any) => {
+const NotificationItem = ({
+  notification,
+  onNotificationClick,
+  onMarkAsRead,
+}: NotificationItemProps) => {
+  const getNotificationContent = () => {
     switch (notification.type) {
-      case 'new_message':
-        return `New message from ${notification.sender?.full_name || 'Someone'}`;
-      case 'new_follower':
-        return `${notification.sender?.full_name || 'Someone'} started following you`;
-      case 'new_note':
-        return `${notification.sender?.full_name || 'Someone'} shared a new note: ${notification.data?.title || ''}`;
-      case 'chat_mention':
-        return `${notification.sender?.full_name || 'Someone'} mentioned you in chat`;
+      case "new_follower":
+        return "Someone started following you";
+      case "new_note":
+        return `New note: ${notification.data.title}`;
       default:
-        return 'New notification';
-    }
-  };
-
-  const handleClick = async () => {
-    try {
-      setIsLoading(true);
-      await onNotificationClick(notification);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Could not load notification content. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMarkAsRead = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      setIsLoading(true);
-      await onMarkAsRead(notification);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Could not mark notification as read. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+        return "New notification";
     }
   };
 
   return (
-    <DropdownMenuItem
-      key={notification.id}
-      className="cursor-pointer p-0"
-    >
-      <div className="flex items-center justify-between w-full p-2">
+    <div className="flex flex-col gap-2 p-4 rounded-lg border border-border bg-card">
+      <div className="flex items-start justify-between gap-2">
         <div 
-          className="flex flex-col flex-1 mr-2"
-          onClick={handleClick}
+          className="flex-1 cursor-pointer"
+          onClick={() => onNotificationClick(notification)}
         >
-          <span className="font-medium">{getNotificationText(notification)}</span>
-          <span className="text-sm text-muted-foreground">
-            {new Date(notification.created_at).toLocaleDateString()}
-          </span>
+          <p className="text-sm font-medium">{getNotificationContent()}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+          </p>
         </div>
         {!notification.read && (
           <Button
             variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={handleMarkAsRead}
-            disabled={isLoading}
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onMarkAsRead(notification)}
           >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
-            )}
+            <Check className="h-4 w-4" />
           </Button>
         )}
       </div>
-    </DropdownMenuItem>
+    </div>
   );
 };
 
