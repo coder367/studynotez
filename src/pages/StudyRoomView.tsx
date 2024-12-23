@@ -31,9 +31,10 @@ const StudyRoomView = () => {
         .select("*")
         .eq("id", id)
         .is("deleted_at", null)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error("Room not found");
       return data;
     },
     enabled: !!id,
@@ -65,8 +66,8 @@ const StudyRoomView = () => {
   useEffect(() => {
     if (isRoomError || (room && room.deleted_at)) {
       toast({
-        title: "Error",
-        description: "This room no longer exists",
+        title: "Room Not Found",
+        description: "This room no longer exists or has been deleted",
         variant: "destructive",
       });
       navigate("/dashboard/study-room");
