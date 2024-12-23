@@ -50,15 +50,18 @@ const NotificationsMenu = () => {
 
   return (
     <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative"
-        onClick={() => setIsOpen(true)}
-      >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && <NotificationBadge unreadCount={unreadCount} />}
-      </Button>
+      {unreadCount > 0 ? (
+        <NotificationBadge unreadCount={unreadCount} onClick={() => setIsOpen(true)} />
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsOpen(true)}
+          className="relative"
+        >
+          <Bell className="h-5 w-5" />
+        </Button>
+      )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl">

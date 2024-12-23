@@ -3,14 +3,16 @@ import { Button } from "@/components/ui/button";
 
 interface NotificationBadgeProps {
   unreadCount: number;
+  onClick: () => void;
 }
 
-const NotificationBadge = ({ unreadCount }: NotificationBadgeProps) => {
+const NotificationBadge = ({ unreadCount, onClick }: NotificationBadgeProps) => {
   return (
     <Button 
       variant="ghost" 
       size="icon" 
       className="relative hover:bg-accent/10 transition-colors"
+      onClick={onClick}
     >
       <BellRing className="h-5 w-5 text-foreground" />
       {unreadCount > 0 && (

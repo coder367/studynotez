@@ -5,9 +5,12 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
 
   const initializeMedia = useCallback(async () => {
     try {
+      if (stream) return; // Don't reinitialize if we already have a stream
+
       const constraints = {
         audio: !isVoiceOnly,
         video: true,
@@ -20,14 +23,16 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
 
       // Set up audio level monitoring if audio is enabled
       if (!isVoiceOnly) {
-        const audioContext = new AudioContext();
-        const source = audioContext.createMediaStreamSource(newStream);
-        const analyser = audioContext.createAnalyser();
+        const context = new AudioContext();
+        const source = context.createMediaStreamSource(newStream);
+        const analyser = context.createAnalyser();
         analyser.fftSize = 256;
         source.connect(analyser);
+        setAudioContext(context);
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         const updateAudioLevel = () => {
+          if (context.state === 'closed') return;
           analyser.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
           setAudioLevel((average / 255) * 100);
@@ -38,7 +43,7 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
-  }, [isVoiceOnly]);
+  }, [isVoiceOnly, stream]);
 
   const stopAllTracks = useCallback(() => {
     if (stream) {
@@ -49,8 +54,12 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       setIsAudioEnabled(false);
       setIsVideoEnabled(false);
       setAudioLevel(0);
+      if (audioContext) {
+        audioContext.close();
+        setAudioContext(null);
+      }
     }
-  }, [stream]);
+  }, [stream, audioContext]);
 
   const toggleAudio = useCallback(() => {
     if (stream && !isVoiceOnly) {
@@ -73,13 +82,13 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   }, [stream]);
 
   return {
-    localStream: stream,  // Changed from 'stream' to 'localStream' to match VideoCall usage
+    localStream: stream,
     isAudioEnabled,
     isVideoEnabled,
     audioLevel,
     toggleAudio,
     toggleVideo,
-    initializeMedia,  // Added this
-    stopAllTracks,    // Added this
+    initializeMedia,
+    stopAllTracks,
   };
 };
