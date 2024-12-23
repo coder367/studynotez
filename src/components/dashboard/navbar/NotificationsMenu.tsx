@@ -7,13 +7,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationItem from "./NotificationItem";
 import NotificationBadge from "./NotificationBadge";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],
@@ -46,24 +47,45 @@ const NotificationsMenu = () => {
       .eq("id", notification.id);
 
     if (error) throw error;
+    
+    // Invalidate the notifications query to refresh the data
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  };
+
+  const handleDialogOpen = async (open: boolean) => {
+    setIsOpen(open);
+    
+    if (open) {
+      // Mark all notifications as read when opening the dialog
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("read", false)
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+      
+      // Invalidate the notifications query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    }
   };
 
   return (
     <div className="relative">
       {unreadCount > 0 ? (
-        <NotificationBadge unreadCount={unreadCount} onClick={() => setIsOpen(true)} />
+        <NotificationBadge unreadCount={unreadCount} onClick={() => handleDialogOpen(true)} />
       ) : (
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setIsOpen(true)}
+          onClick={() => handleDialogOpen(true)}
           className="relative"
         >
           <Bell className="h-5 w-5" />
         </Button>
       )}
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Notifications</DialogTitle>

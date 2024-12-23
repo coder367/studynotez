@@ -169,6 +169,7 @@ export type Database = {
           file_type: string | null
           file_url: string | null
           id: string
+          preview_image: string | null
           subject: string | null
           title: string
           university: string | null
@@ -182,6 +183,7 @@ export type Database = {
           file_type?: string | null
           file_url?: string | null
           id?: string
+          preview_image?: string | null
           subject?: string | null
           title: string
           university?: string | null
@@ -195,6 +197,7 @@ export type Database = {
           file_type?: string | null
           file_url?: string | null
           id?: string
+          preview_image?: string | null
           subject?: string | null
           title?: string
           university?: string | null

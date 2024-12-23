@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import ViewNoteModal from "./ViewNoteModal";
 import { useNavigate } from "react-router-dom";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface Note {
   id: string;
@@ -14,6 +15,7 @@ interface Note {
   created_at: string;
   file_type?: string;
   file_url?: string;
+  preview_image?: string;
   user_id: string;
 }
 
@@ -63,40 +65,48 @@ const Library = () => {
       {notes.map((note) => (
         <Card
           key={note.id}
-          className="w-full"
+          className="w-full hover:shadow-lg transition-shadow"
+          onClick={() => handleNoteClick(note)}
         >
           <CardContent className="p-4">
-            <div
-              className="flex items-start gap-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-              onClick={() => handleNoteClick(note)}
-            >
-              <FileText className="h-5 w-5 text-primary mt-1" />
-              <div>
-                <p className="font-medium">{note.title}</p>
-                {note.description && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {note.description}
-                  </p>
-                )}
-                <div className="flex gap-2 mt-2">
-                  {note.subject && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                      {note.subject}
-                    </span>
-                  )}
-                  {note.university && (
-                    <span 
-                      className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer hover:bg-secondary/20"
-                      onClick={(e) => handleUniversityClick(e, note.university)}
-                    >
-                      {note.university}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {new Date(note.created_at).toLocaleDateString()}
-                </p>
+            {note.preview_image ? (
+              <AspectRatio ratio={16 / 9} className="mb-4 overflow-hidden rounded-lg">
+                <img
+                  src={note.preview_image}
+                  alt={note.title}
+                  className="object-cover w-full h-full"
+                />
+              </AspectRatio>
+            ) : (
+              <div className="flex items-start gap-3 mb-4">
+                <FileText className="h-5 w-5 text-primary mt-1" />
               </div>
+            )}
+            <div>
+              <p className="font-medium">{note.title}</p>
+              {note.description && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {note.description}
+                </p>
+              )}
+              <div className="flex gap-2 mt-2">
+                {note.subject && (
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                    {note.subject}
+                  </span>
+                )}
+                {note.university && (
+                  <span 
+                    className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer hover:bg-secondary/20"
+                    onClick={(e) => handleUniversityClick(e, note.university)}
+                  >
+                    {note.university}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {new Date(note.created_at).toLocaleDateString()}
+              </p>
             </div>
           </CardContent>
         </Card>
