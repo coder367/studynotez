@@ -50,15 +50,6 @@ Deno.serve(async (req) => {
       console.log(`Cleaned up ${inactiveRooms.length} inactive rooms`)
     }
 
-    // Also clean up any existing rooms that are older than 4 hours
-    const { error: existingRoomsError } = await supabase
-      .from('study_rooms')
-      .update({ deleted_at: new Date().toISOString() })
-      .is('deleted_at', null)
-      .lt('created_at', fourHoursAgo)
-
-    if (existingRoomsError) throw existingRoomsError
-
     return new Response(
       JSON.stringify({ message: 'Cleanup completed successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
