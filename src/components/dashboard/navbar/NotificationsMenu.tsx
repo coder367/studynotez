@@ -34,6 +34,20 @@ const NotificationsMenu = () => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  const handleNotificationClick = async (notification: any) => {
+    // Handle notification click
+    console.log("Notification clicked:", notification);
+  };
+
+  const handleMarkAsRead = async (notification: any) => {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", notification.id);
+
+    if (error) throw error;
+  };
+
   return (
     <div className="relative">
       <Button
@@ -43,7 +57,7 @@ const NotificationsMenu = () => {
         onClick={() => setIsOpen(true)}
       >
         <Bell className="h-5 w-5" />
-        {unreadCount > 0 && <NotificationBadge count={unreadCount} />}
+        {unreadCount > 0 && <NotificationBadge unreadCount={unreadCount} />}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -57,6 +71,8 @@ const NotificationsMenu = () => {
                 <NotificationItem
                   key={notification.id}
                   notification={notification}
+                  onNotificationClick={handleNotificationClick}
+                  onMarkAsRead={handleMarkAsRead}
                 />
               ))
             ) : (

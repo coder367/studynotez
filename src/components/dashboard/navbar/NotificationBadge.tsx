@@ -5,7 +5,7 @@ interface NotificationBadgeProps {
   unreadCount: number;
 }
 
-export const NotificationBadge = ({ unreadCount }: NotificationBadgeProps) => {
+const NotificationBadge = ({ unreadCount }: NotificationBadgeProps) => {
   return (
     <Button 
       variant="ghost" 
@@ -21,3 +21,5 @@ export const NotificationBadge = ({ unreadCount }: NotificationBadgeProps) => {
     </Button>
   );
 };
+
+export default NotificationBadge;

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
-import { NotificationsMenu } from "./navbar/NotificationsMenu";
+import NotificationsMenu from "./navbar/NotificationsMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const DashboardNavbar = () => {

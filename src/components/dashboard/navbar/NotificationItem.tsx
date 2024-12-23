@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -11,7 +10,7 @@ interface NotificationItemProps {
   onMarkAsRead: (notification: any) => Promise<void>;
 }
 
-export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRead }: NotificationItemProps) => {
+const NotificationItem = ({ notification, onNotificationClick, onMarkAsRead }: NotificationItemProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -95,3 +94,5 @@ export const NotificationItem = ({ notification, onNotificationClick, onMarkAsRe
     </DropdownMenuItem>
   );
 };
+
+export default NotificationItem;
