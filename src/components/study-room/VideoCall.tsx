@@ -6,9 +6,11 @@ import { ParticipantVideo } from "./ParticipantVideo";
 import { Controls } from "./Controls";
 import { useMediaStream } from "./useMediaStream";
 import { useRoomPresence } from "./useRoomPresence";
+import { useToast } from "@/hooks/use-toast";
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [userName, setUserName] = useState<string>("");
   
   const { 
@@ -18,15 +20,18 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     audioLevel,
     toggleAudio,
     toggleVideo,
-    initializeMedia
+    initializeMedia,
+    stopAllTracks
   } = useMediaStream(isVoiceOnly);
   
   const { participants } = useRoomPresence(roomId, userName);
 
-  // Re-initialize media when isVoiceOnly changes
   useEffect(() => {
     initializeMedia();
-  }, [isVoiceOnly, initializeMedia]);
+    return () => {
+      stopAllTracks();
+    };
+  }, [isVoiceOnly, initializeMedia, stopAllTracks]);
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -47,22 +52,26 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   }, []);
 
   const handleLeaveCall = async () => {
-    if (localStream) {
-      localStream.getTracks().forEach(track => {
-        track.stop();
+    try {
+      stopAllTracks();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from("room_participants")
+          .delete()
+          .eq("room_id", roomId)
+          .eq("user_id", user.id);
+      }
+
+      navigate("/dashboard/study-room");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to leave the room properly",
+        variant: "destructive",
       });
     }
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
-        .from("room_participants")
-        .delete()
-        .eq("room_id", roomId)
-        .eq("user_id", user.id);
-    }
-
-    navigate("/dashboard/study-room");
   };
 
   return (

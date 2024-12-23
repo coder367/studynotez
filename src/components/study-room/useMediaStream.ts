@@ -10,17 +10,32 @@ export const useMediaStream = (isVoiceOnly: boolean) => {
   const dataArray = useRef<Uint8Array | null>(null);
   const animationFrame = useRef<number>();
 
+  const stopAllTracks = () => {
+    if (localStream.current) {
+      localStream.current.getTracks().forEach(track => {
+        track.stop();
+      });
+      localStream.current = null;
+    }
+  };
+
   const initializeMedia = useCallback(async () => {
     try {
-      if (localStream.current) {
-        localStream.current.getTracks().forEach(track => track.stop());
-      }
+      // Stop existing tracks before requesting new ones
+      stopAllTracks();
 
       const constraints = {
-        video: isVideoEnabled,
-        // Only enable audio in study rooms, not in focus rooms
-        audio: !isVoiceOnly
+        video: isVideoEnabled ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } : false,
+        audio: !isVoiceOnly && isAudioEnabled
       };
+
+      if (!constraints.video && !constraints.audio) {
+        console.log("No media requested");
+        return;
+      }
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStream.current = stream;
@@ -35,6 +50,11 @@ export const useMediaStream = (isVoiceOnly: boolean) => {
           track.enabled = isAudioEnabled;
         });
 
+        // Setup audio analysis
+        if (audioContext.current) {
+          audioContext.current.close();
+        }
+        
         audioContext.current = new AudioContext();
         analyser.current = audioContext.current.createAnalyser();
         const source = audioContext.current.createMediaStreamSource(stream);
@@ -62,9 +82,7 @@ export const useMediaStream = (isVoiceOnly: boolean) => {
     initializeMedia();
 
     return () => {
-      if (localStream.current) {
-        localStream.current.getTracks().forEach(track => track.stop());
-      }
+      stopAllTracks();
       if (animationFrame.current) {
         cancelAnimationFrame(animationFrame.current);
       }
@@ -85,12 +103,14 @@ export const useMediaStream = (isVoiceOnly: boolean) => {
   };
 
   const toggleVideo = () => {
+    setIsVideoEnabled(!isVideoEnabled);
     if (localStream.current) {
       const videoTrack = localStream.current.getVideoTracks()[0];
       if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoEnabled(!isVideoEnabled);
+        videoTrack.enabled = !isVideoEnabled;
       }
+      // Reinitialize media to handle camera on/off
+      initializeMedia();
     }
   };
 
@@ -101,6 +121,7 @@ export const useMediaStream = (isVoiceOnly: boolean) => {
     audioLevel,
     toggleAudio,
     toggleVideo,
-    initializeMedia
+    initializeMedia,
+    stopAllTracks
   };
 };

@@ -8,6 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationBadge } from "./NotificationBadge";
@@ -19,6 +21,7 @@ export const NotificationsMenu = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   const isMobile = useIsMobile();
 
   const { data: notifications = [], isLoading, error } = useQuery({
@@ -38,8 +41,7 @@ export const NotificationsMenu = () => {
         `)
         .eq("user_id", session.user.id)
         .eq("read", false)
-        .order("created_at", { ascending: false })
-        .limit(5);
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
@@ -64,6 +66,7 @@ export const NotificationsMenu = () => {
       }
       await markAsRead(notification);
       setIsOpen(false);
+      setShowAllNotifications(false);
     } catch (error: any) {
       console.error("Error handling notification click:", error);
       toast({
@@ -100,38 +103,67 @@ export const NotificationsMenu = () => {
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <NotificationBadge unreadCount={notifications.length} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="end" 
-        className={`w-[300px] md:w-[400px] max-h-[80vh] overflow-y-auto ${isMobile ? 'mx-4' : ''}`}
-      >
-        {isLoading ? (
-          <DropdownMenuItem disabled className="flex items-center justify-center p-4">
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            Loading notifications...
-          </DropdownMenuItem>
-        ) : error ? (
-          <DropdownMenuItem disabled className="text-center p-4 text-destructive">
-            Error loading notifications
-          </DropdownMenuItem>
-        ) : notifications.length > 0 ? (
-          notifications.map((notification) => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              onNotificationClick={handleNotificationClick}
-              onMarkAsRead={markAsRead}
-            />
-          ))
-        ) : (
-          <DropdownMenuItem disabled className="text-center p-4">
-            No new notifications
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <NotificationBadge unreadCount={notifications.length} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="end" 
+          className={`w-[300px] md:w-[400px] max-h-[80vh] overflow-y-auto ${isMobile ? 'mx-4' : ''}`}
+        >
+          {isLoading ? (
+            <DropdownMenuItem disabled className="flex items-center justify-center p-4">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Loading notifications...
+            </DropdownMenuItem>
+          ) : error ? (
+            <DropdownMenuItem disabled className="text-center p-4 text-destructive">
+              Error loading notifications
+            </DropdownMenuItem>
+          ) : notifications.length > 0 ? (
+            <>
+              {notifications.slice(0, 5).map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onNotificationClick={handleNotificationClick}
+                  onMarkAsRead={markAsRead}
+                />
+              ))}
+              {notifications.length > 5 && (
+                <DropdownMenuItem
+                  className="text-center text-primary cursor-pointer"
+                  onClick={() => setShowAllNotifications(true)}
+                >
+                  View all notifications
+                </DropdownMenuItem>
+              )}
+            </>
+          ) : (
+            <DropdownMenuItem disabled className="text-center p-4">
+              No new notifications
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={showAllNotifications} onOpenChange={setShowAllNotifications}>
+        <DialogContent className="max-w-[90vw] w-[800px] max-h-[80vh]">
+          <ScrollArea className="h-[60vh]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+              {notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onNotificationClick={handleNotificationClick}
+                  onMarkAsRead={markAsRead}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
