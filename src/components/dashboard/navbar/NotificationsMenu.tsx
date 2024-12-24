@@ -15,6 +15,15 @@ import NotificationBadge from "./NotificationBadge";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+interface Notification {
+  id: string;
+  type: string;
+  user_id: string;
+  data: any;
+  created_at: string;
+  read_at: string | null;
+}
+
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -63,7 +72,12 @@ const NotificationsMenu = () => {
         read_at: message.read_at
       }));
 
-      return [...notificationsData.data, ...messageNotifications].sort(
+      const formattedNotifications = notificationsData.data.map(notification => ({
+        ...notification,
+        read_at: notification.read_at || null
+      }));
+
+      return [...formattedNotifications, ...messageNotifications].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
@@ -71,7 +85,7 @@ const NotificationsMenu = () => {
 
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
-  const handleNotificationClick = async (notification: any) => {
+  const handleNotificationClick = async (notification: Notification) => {
     if (notification.type === "new_message") {
       navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
       setIsOpen(false);

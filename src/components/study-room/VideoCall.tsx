@@ -27,8 +27,8 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   
   const { participants, addParticipant, removeParticipant } = useRoomPresence(roomId, userName);
   
-  // Initialize WebRTC
-  useWebRTC(roomId, localStream, addParticipant);
+  // Initialize WebRTC with all required parameters
+  useWebRTC(roomId, localStream, addParticipant, removeParticipant);
 
   useEffect(() => {
     initializeMedia();
