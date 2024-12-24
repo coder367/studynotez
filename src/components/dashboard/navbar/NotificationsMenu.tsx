@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,11 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 import NotificationItem from "./NotificationItem";
 import NotificationBadge from "./NotificationBadge";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],
@@ -47,7 +49,6 @@ const NotificationsMenu = () => {
       if (notificationsData.error) throw notificationsData.error;
       if (messagesData.error) throw messagesData.error;
 
-      // Convert messages to notifications format
       const messageNotifications = messagesData.data.map(message => ({
         id: `message-${message.id}`,
         type: "new_message",
@@ -73,7 +74,6 @@ const NotificationsMenu = () => {
     console.log("Notification clicked:", notification);
     
     if (notification.type === "new_message") {
-      // If it's a message notification, navigate to chat
       navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
       setIsOpen(false);
     }
@@ -82,21 +82,18 @@ const NotificationsMenu = () => {
   const handleMarkAsRead = async (notification: any) => {
     try {
       if (notification.id.startsWith('message-')) {
-        // Handle message notifications
         const messageId = notification.id.replace('message-', '');
         await supabase
           .from("messages")
           .update({ read_at: new Date().toISOString() })
           .eq("id", messageId);
       } else {
-        // Handle regular notifications
         await supabase
           .from("notifications")
           .update({ read: true })
           .eq("id", notification.id);
       }
       
-      // Invalidate the notifications query to refresh the data
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error) {
       console.error("Error marking notification as read:", error);
@@ -104,28 +101,33 @@ const NotificationsMenu = () => {
   };
 
   const handleMarkAllAsRead = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     try {
-      // Mark all notifications as read
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       await Promise.all([
         supabase
           .from("notifications")
           .update({ read: true })
-          .eq("read", false)
-          .eq("user_id", user.id),
+          .eq("user_id", user.id)
+          .is("read", false),
         supabase
           .from("messages")
           .update({ read_at: new Date().toISOString() })
-          .is("read_at", null)
           .eq("receiver_id", user.id)
+          .is("read_at", null)
       ]);
       
-      // Invalidate the notifications query to refresh the data
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      setIsOpen(false);
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read",
+        variant: "destructive",
+      });
     }
   };
 

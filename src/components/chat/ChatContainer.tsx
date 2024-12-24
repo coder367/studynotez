@@ -35,11 +35,9 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
         `)
         .order("created_at", { ascending: true });
 
-      // For public chat, get messages with null receiver_id
       if (activeChat === "public") {
         query.is("receiver_id", null);
       } else if (activeChat) {
-        // For private chat, get messages between the two users
         query.or(
           `and(sender_id.eq.${currentUser},receiver_id.eq.${(activeChat as any).id}),and(sender_id.eq.${(activeChat as any).id},receiver_id.eq.${currentUser})`
         );
@@ -52,20 +50,20 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
     enabled: !!currentUser,
   });
 
-  // Auto-scroll to bottom when new messages arrive or on initial load
+  // Scroll to bottom on initial load and new messages
   useEffect(() => {
-    const scrollArea = scrollAreaRef.current;
-    if (scrollArea) {
-      // Immediate scroll
-      scrollArea.scrollTop = scrollArea.scrollHeight;
-      
-      // Additional scroll after a short delay to handle dynamic content
-      const scrollTimeout = setTimeout(() => {
+    const scrollToBottom = () => {
+      if (scrollAreaRef.current) {
+        const scrollArea = scrollAreaRef.current;
         scrollArea.scrollTop = scrollArea.scrollHeight;
-      }, 100);
-      
-      return () => clearTimeout(scrollTimeout);
-    }
+      }
+    };
+
+    // Scroll immediately and after a short delay to handle dynamic content
+    scrollToBottom();
+    const scrollTimeout = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(scrollTimeout);
   }, [messages]);
 
   // Focus input when chat changes
@@ -85,10 +83,6 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
         table: 'messages' 
       }, () => {
         refetchMessages();
-        // Scroll to bottom when new message arrives
-        if (scrollAreaRef.current) {
-          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-        }
       })
       .subscribe();
 
