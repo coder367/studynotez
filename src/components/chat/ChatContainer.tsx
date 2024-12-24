@@ -52,17 +52,20 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
   });
 
   // Auto-scroll to bottom when new messages arrive
-
-// Update the useEffect for auto-scroll
-useEffect(() => {
-  const scrollArea = scrollAreaRef.current;
-  if (scrollArea) {
-    const scrollTimeout = setTimeout(() => {
+  useEffect(() => {
+    const scrollArea = scrollAreaRef.current;
+    if (scrollArea) {
+      // Immediate scroll
       scrollArea.scrollTop = scrollArea.scrollHeight;
-    }, 100); // Small delay to ensure content is rendered
-    return () => clearTimeout(scrollTimeout);
-  }
-}, [messages]);
+      
+      // Additional scroll after a short delay to handle dynamic content
+      const scrollTimeout = setTimeout(() => {
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+      }, 100);
+      
+      return () => clearTimeout(scrollTimeout);
+    }
+  }, [messages]);
 
   // Focus input when chat changes
   useEffect(() => {
@@ -81,6 +84,10 @@ useEffect(() => {
         table: 'messages' 
       }, () => {
         refetchMessages();
+        // Scroll to bottom when new message arrives
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        }
       })
       .subscribe();
 

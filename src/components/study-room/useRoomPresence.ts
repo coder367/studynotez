@@ -1,22 +1,53 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Participant } from "@/types/video-call";
 
 export const useRoomPresence = (roomId: string, userName: string) => {
   const [participants, setParticipants] = useState<Map<string, Participant>>(new Map());
 
+  const addParticipant = useCallback((userId: string, stream?: MediaStream) => {
+    setParticipants(prev => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(userId);
+      newMap.set(userId, {
+        ...existing,
+        id: userId,
+        stream: stream || existing?.stream,
+        username: userName
+      });
+      return newMap;
+    });
+  }, [userName]);
+
+  const removeParticipant = useCallback((userId: string) => {
+    setParticipants(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(userId);
+      return newMap;
+    });
+  }, []);
+
   useEffect(() => {
     const channel = supabase.channel(`room:${roomId}`)
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        updateParticipants(state);
+        console.log('Presence state updated:', state);
+        Object.entries(state).forEach(([key, value]) => {
+          const presence = value[0] as any;
+          addParticipant(presence.user_id);
+        });
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         console.log('User joined:', newPresences);
+        newPresences.forEach((presence: any) => {
+          addParticipant(presence.user_id);
+        });
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
         console.log('User left:', leftPresences);
-        removeParticipant(key);
+        leftPresences.forEach((presence: any) => {
+          removeParticipant(presence.user_id);
+        });
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -34,27 +65,7 @@ export const useRoomPresence = (roomId: string, userName: string) => {
     return () => {
       channel.unsubscribe();
     };
-  }, [roomId, userName]);
+  }, [roomId, userName, addParticipant, removeParticipant]);
 
-  const updateParticipants = (state: any) => {
-    const newParticipants = new Map(participants);
-    Object.keys(state).forEach(key => {
-      const presence = state[key][0];
-      if (!newParticipants.has(presence.user_id)) {
-        newParticipants.set(presence.user_id, {
-          id: presence.user_id,
-          username: presence.username,
-        });
-      }
-    });
-    setParticipants(newParticipants);
-  };
-
-  const removeParticipant = (userId: string) => {
-    const newParticipants = new Map(participants);
-    newParticipants.delete(userId);
-    setParticipants(newParticipants);
-  };
-
-  return { participants };
+  return { participants, addParticipant, removeParticipant };
 };
