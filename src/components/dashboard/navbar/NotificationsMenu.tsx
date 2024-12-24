@@ -11,7 +11,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationItem from "./NotificationItem";
-import NotificationBadge from "./NotificationBadge";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
@@ -33,7 +32,13 @@ interface MessageNotification {
   read_at: string | null;
 }
 
-type Notification = DatabaseNotification | MessageNotification;
+interface NotificationItemType {
+  id: string;
+  type: string;
+  data: any;
+  created_at: string;
+  read_at: string | null;
+}
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -83,15 +88,19 @@ const NotificationsMenu = () => {
         read_at: message.read_at
       }));
 
-      return [...notificationsData.data, ...messageNotifications].sort(
+      const formattedNotifications: NotificationItemType[] = notificationsData.data.map(notification => ({
+        ...notification,
+        read_at: notification.read ? new Date().toISOString() : null
+      }));
+
+      return [...formattedNotifications, ...messageNotifications].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
   });
 
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = async (notification: NotificationItemType) => {
     if (notification.type === "new_message" && 
-        'data' in notification && 
         typeof notification.data === 'object' && 
         notification.data !== null && 
         'sender_id' in notification.data) {
