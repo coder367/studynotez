@@ -21,7 +21,7 @@ const NotificationsMenu = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], refetch: refetchNotifications } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -32,6 +32,7 @@ const NotificationsMenu = () => {
           .from("notifications")
           .select("*")
           .eq("user_id", user.id)
+          .is("read_at", null)
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
@@ -59,7 +60,7 @@ const NotificationsMenu = () => {
           sender_id: message.sender_id
         },
         created_at: message.created_at,
-        read: message.read_at !== null
+        read_at: message.read_at
       }));
 
       return [...notificationsData.data, ...messageNotifications].sort(
@@ -68,35 +69,12 @@ const NotificationsMenu = () => {
     },
   });
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   const handleNotificationClick = async (notification: any) => {
-    console.log("Notification clicked:", notification);
-    
     if (notification.type === "new_message") {
       navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
       setIsOpen(false);
-    }
-  };
-
-  const handleMarkAsRead = async (notification: any) => {
-    try {
-      if (notification.id.startsWith('message-')) {
-        const messageId = notification.id.replace('message-', '');
-        await supabase
-          .from("messages")
-          .update({ read_at: new Date().toISOString() })
-          .eq("id", messageId);
-      } else {
-        await supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("id", notification.id);
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
     }
   };
 
@@ -105,24 +83,29 @@ const NotificationsMenu = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await Promise.all([
-        supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("user_id", user.id)
-          .is("read", false),
-        supabase
-          .from("messages")
-          .update({ read_at: new Date().toISOString() })
-          .eq("receiver_id", user.id)
-          .is("read_at", null)
-      ]);
-      
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      // Mark all notifications as read
+      await supabase
+        .from("notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .is("read_at", null);
+
+      // Mark all messages as read
+      await supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("receiver_id", user.id)
+        .is("read_at", null);
+
+      await refetchNotifications();
       setIsOpen(false);
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
+      
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
+    } catch (error: any) {
+      console.error("Error marking notifications as read:", error);
       toast({
         title: "Error",
         description: "Failed to mark notifications as read",
@@ -166,12 +149,11 @@ const NotificationsMenu = () => {
                   key={notification.id}
                   notification={notification}
                   onNotificationClick={handleNotificationClick}
-                  onMarkAsRead={handleMarkAsRead}
                 />
               ))
             ) : (
               <div className="col-span-2 text-center text-muted-foreground py-8">
-                No notifications yet
+                No notifications
               </div>
             )}
           </div>

@@ -1,14 +1,49 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
-export const useWebRTC = (roomId: string, localStream: MediaStream | null, addParticipant: (id: string, stream: MediaStream) => void) => {
+export const useWebRTC = (
+  roomId: string, 
+  localStream: MediaStream | null, 
+  addParticipant: (id: string, stream: MediaStream) => void,
+  removeParticipant: (id: string) => void
+) => {
   const peerConnections = useRef(new Map<string, RTCPeerConnection>());
 
-  useEffect(() => {
-    if (!localStream) return;
+  const createPeerConnection = useCallback((peerId: string) => {
+    console.log('Creating new peer connection for:', peerId);
+    
+    if (peerConnections.current.has(peerId)) {
+      console.log('Peer connection already exists for:', peerId);
+      return peerConnections.current.get(peerId)!;
+    }
 
-    const handleICECandidate = async (peerId: string, event: RTCPeerConnectionIceEvent) => {
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    });
+
+    // Add local tracks to the peer connection
+    if (localStream) {
+      localStream.getTracks().forEach(track => {
+        console.log('Adding track to peer connection:', track.kind);
+        peerConnection.addTrack(track, localStream);
+      });
+    }
+
+    // Handle incoming tracks
+    peerConnection.ontrack = (event) => {
+      console.log('Received remote track:', event.track.kind);
+      if (event.streams?.[0]) {
+        addParticipant(peerId, event.streams[0]);
+      }
+    };
+
+    // Handle ICE candidates
+    peerConnection.onicecandidate = async (event) => {
       if (event.candidate) {
+        console.log('Sending ICE candidate to:', peerId);
         await supabase.channel(`room:${roomId}`).send({
           type: 'broadcast',
           event: 'ice-candidate',
@@ -17,85 +52,90 @@ export const useWebRTC = (roomId: string, localStream: MediaStream | null, addPa
       }
     };
 
-    const handleTrack = (peerId: string, event: RTCTrackEvent) => {
-      console.log('Received remote track from:', peerId);
-      if (event.streams?.[0]) {
-        addParticipant(peerId, event.streams[0]);
+    // Handle connection state changes
+    peerConnection.onconnectionstatechange = () => {
+      console.log('Connection state changed:', peerConnection.connectionState);
+      if (peerConnection.connectionState === 'failed' || 
+          peerConnection.connectionState === 'closed') {
+        removeParticipant(peerId);
+        peerConnections.current.delete(peerId);
       }
     };
 
-    const createPeerConnection = (peerId: string) => {
-      console.log('Creating new peer connection for:', peerId);
-      const peerConnection = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      });
+    peerConnections.current.set(peerId, peerConnection);
+    return peerConnection;
+  }, [roomId, localStream, addParticipant, removeParticipant]);
 
-      peerConnection.onicecandidate = (event) => handleICECandidate(peerId, event);
-      peerConnection.ontrack = (event) => handleTrack(peerId, event);
-
-      // Add local tracks to the peer connection
-      localStream.getTracks().forEach(track => {
-        peerConnection.addTrack(track, localStream);
-      });
-
-      peerConnections.current.set(peerId, peerConnection);
-      return peerConnection;
-    };
+  useEffect(() => {
+    if (!localStream) return;
 
     const channel = supabase.channel(`room:${roomId}`)
       .on('broadcast', { event: 'peer-join' }, async ({ payload }) => {
-        console.log('New peer joining:', payload);
         const { peerId } = payload;
-        
         const { data: { user } } = await supabase.auth.getUser();
+        
         if (peerId === user?.id) return;
-
+        
+        console.log('New peer joining:', peerId);
         const peerConnection = createPeerConnection(peerId);
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        channel.send({
-          type: 'broadcast',
-          event: 'offer',
-          payload: { peerId, offer }
-        });
+        
+        try {
+          const offer = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offer);
+          
+          await channel.send({
+            type: 'broadcast',
+            event: 'offer',
+            payload: { peerId, offer }
+          });
+        } catch (error) {
+          console.error('Error creating offer:', error);
+        }
       })
       .on('broadcast', { event: 'offer' }, async ({ payload }) => {
-        console.log('Received offer:', payload);
         const { peerId, offer } = payload;
+        console.log('Received offer from:', peerId);
         
-        let peerConnection = peerConnections.current.get(peerId);
-        if (!peerConnection) {
-          peerConnection = createPeerConnection(peerId);
+        try {
+          const peerConnection = createPeerConnection(peerId);
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+          
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          
+          await channel.send({
+            type: 'broadcast',
+            event: 'answer',
+            payload: { peerId, answer }
+          });
+        } catch (error) {
+          console.error('Error handling offer:', error);
         }
-
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        channel.send({
-          type: 'broadcast',
-          event: 'answer',
-          payload: { peerId, answer }
-        });
       })
       .on('broadcast', { event: 'answer' }, async ({ payload }) => {
-        console.log('Received answer:', payload);
         const { peerId, answer } = payload;
+        console.log('Received answer from:', peerId);
+        
         const peerConnection = peerConnections.current.get(peerId);
         if (peerConnection) {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+          try {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+          } catch (error) {
+            console.error('Error setting remote description:', error);
+          }
         }
       })
       .on('broadcast', { event: 'ice-candidate' }, ({ payload }) => {
-        console.log('Received ICE candidate:', payload);
         const { peerId, candidate } = payload;
+        console.log('Received ICE candidate from:', peerId);
+        
         const peerConnection = peerConnections.current.get(peerId);
         if (peerConnection) {
-          peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          try {
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (error) {
+            console.error('Error adding ICE candidate:', error);
+          }
         }
       });
 
@@ -108,7 +148,7 @@ export const useWebRTC = (roomId: string, localStream: MediaStream | null, addPa
       });
       peerConnections.current.clear();
     };
-  }, [roomId, localStream, addParticipant]);
+  }, [roomId, localStream, createPeerConnection]);
 
   return peerConnections.current;
 };
