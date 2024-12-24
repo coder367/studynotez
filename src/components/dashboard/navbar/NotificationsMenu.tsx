@@ -14,15 +14,24 @@ import NotificationItem from "./NotificationItem";
 import NotificationBadge from "./NotificationBadge";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
 
-interface Notification {
+type DatabaseNotification = Database["public"]["Tables"]["notifications"]["Row"];
+
+interface MessageNotification {
   id: string;
-  type: string;
+  type: "new_message";
   user_id: string;
-  data: any;
+  data: {
+    sender_name: string;
+    message: string;
+    sender_id: string;
+  };
   created_at: string;
   read_at: string | null;
 }
+
+type Notification = (DatabaseNotification & { read_at: string | null }) | MessageNotification;
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,7 +50,7 @@ const NotificationsMenu = () => {
           .from("notifications")
           .select("*")
           .eq("user_id", user.id)
-          .is("read_at", null)
+          .is("read", false)
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
@@ -59,22 +68,22 @@ const NotificationsMenu = () => {
       if (notificationsData.error) throw notificationsData.error;
       if (messagesData.error) throw messagesData.error;
 
-      const messageNotifications = messagesData.data.map(message => ({
+      const messageNotifications: MessageNotification[] = messagesData.data.map(message => ({
         id: `message-${message.id}`,
         type: "new_message",
-        user_id: message.receiver_id,
+        user_id: message.receiver_id!,
         data: {
           sender_name: message.sender?.full_name || "Anonymous",
           message: message.content,
-          sender_id: message.sender_id
+          sender_id: message.sender_id!
         },
         created_at: message.created_at,
         read_at: message.read_at
       }));
 
-      const formattedNotifications = notificationsData.data.map(notification => ({
+      const formattedNotifications: Notification[] = notificationsData.data.map(notification => ({
         ...notification,
-        read_at: notification.read_at || null
+        read_at: notification.read ? new Date().toISOString() : null
       }));
 
       return [...formattedNotifications, ...messageNotifications].sort(
@@ -100,9 +109,9 @@ const NotificationsMenu = () => {
       // Mark all notifications as read
       await supabase
         .from("notifications")
-        .update({ read_at: new Date().toISOString() })
+        .update({ read: true })
         .eq("user_id", user.id)
-        .is("read_at", null);
+        .is("read", false);
 
       // Mark all messages as read
       await supabase
