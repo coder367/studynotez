@@ -18,20 +18,22 @@ import { Database } from "@/integrations/supabase/types";
 
 type DatabaseNotification = Database["public"]["Tables"]["notifications"]["Row"];
 
+interface MessageData {
+  sender_name: string;
+  message: string;
+  sender_id: string;
+}
+
 interface MessageNotification {
   id: string;
   type: "new_message";
   user_id: string;
-  data: {
-    sender_name: string;
-    message: string;
-    sender_id: string;
-  };
+  data: MessageData;
   created_at: string;
   read_at: string | null;
 }
 
-type Notification = (DatabaseNotification & { read_at: string | null }) | MessageNotification;
+type Notification = DatabaseNotification | MessageNotification;
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -81,21 +83,18 @@ const NotificationsMenu = () => {
         read_at: message.read_at
       }));
 
-      const formattedNotifications: Notification[] = notificationsData.data.map(notification => ({
-        ...notification,
-        read_at: notification.read ? new Date().toISOString() : null
-      }));
-
-      return [...formattedNotifications, ...messageNotifications].sort(
+      return [...notificationsData.data, ...messageNotifications].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
   });
 
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
-
   const handleNotificationClick = async (notification: Notification) => {
-    if (notification.type === "new_message" && 'data' in notification && typeof notification.data === 'object' && notification.data !== null && 'sender_id' in notification.data) {
+    if (notification.type === "new_message" && 
+        'data' in notification && 
+        typeof notification.data === 'object' && 
+        notification.data !== null && 
+        'sender_id' in notification.data) {
       navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
       setIsOpen(false);
     }
@@ -139,25 +138,21 @@ const NotificationsMenu = () => {
 
   return (
     <div className="relative">
-      {unreadCount > 0 ? (
-        <NotificationBadge unreadCount={unreadCount} onClick={() => setIsOpen(true)} />
-      ) : (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsOpen(true)}
-          className="relative"
-        >
-          <Bell className="h-5 w-5" />
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsOpen(true)}
+        className="relative"
+      >
+        <Bell className="h-5 w-5" />
+      </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>Notifications</DialogTitle>
-              {unreadCount > 0 && (
+              {notifications.length > 0 && (
                 <Button onClick={handleMarkAllAsRead} variant="outline" size="sm">
                   Mark all as read
                 </Button>
