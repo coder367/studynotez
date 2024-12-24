@@ -33,11 +33,18 @@ const StudyRoomView = () => {
         .is("deleted_at", null)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) throw new Error("Room not found");
+      if (error) {
+        console.error("Error fetching room:", error);
+        throw error;
+      }
+      if (!data) {
+        console.error("Room not found");
+        throw new Error("Room not found");
+      }
       return data;
     },
     enabled: !!id,
+    retry: false,
   });
 
   const { data: participants = [] } = useQuery({
@@ -57,10 +64,14 @@ const StudyRoomView = () => {
         `)
         .eq("room_id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching participants:", error);
+        throw error;
+      }
       return data;
     },
     enabled: !!id,
+    retry: false,
   });
 
   useEffect(() => {
@@ -121,6 +132,7 @@ const StudyRoomView = () => {
       queryClient.invalidateQueries({ queryKey: ["studyRooms"] });
       navigate("/dashboard/study-room");
     } catch (error: any) {
+      console.error("Error deleting room:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete room",
