@@ -95,7 +95,7 @@ const NotificationsMenu = () => {
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (notification.type === "new_message") {
+    if (notification.type === "new_message" && 'data' in notification && typeof notification.data === 'object' && notification.data !== null && 'sender_id' in notification.data) {
       navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
       setIsOpen(false);
     }
