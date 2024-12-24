@@ -19,6 +19,7 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
   const [isUploading, setIsUploading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isInitialLoad = useRef(true);
 
   const { data: messages = [], refetch: refetchMessages } = useQuery({
     queryKey: ["messages", activeChat],
@@ -51,7 +52,7 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
     enabled: !!currentUser,
   });
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or on initial load
   useEffect(() => {
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {

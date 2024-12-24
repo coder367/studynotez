@@ -38,10 +38,14 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         console.log('New peer joining:', payload);
         const { peerId } = payload;
         
-        if (peerId === (await supabase.auth.getUser()).data.user?.id) return;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (peerId === user?.id) return;
 
         const peerConnection = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
         });
 
         // Add local tracks to peer connection
@@ -85,7 +89,10 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         const { peerId, offer } = payload;
         
         const peerConnection = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
         });
 
         peerConnections.set(peerId, peerConnection);

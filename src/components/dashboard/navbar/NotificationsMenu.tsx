@@ -103,55 +103,58 @@ const NotificationsMenu = () => {
     }
   };
 
-  const handleDialogOpen = async (open: boolean) => {
-    setIsOpen(open);
-    
-    if (open && unreadCount > 0) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const handleMarkAllAsRead = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      try {
-        // Mark all notifications as read
-        await Promise.all([
-          supabase
-            .from("notifications")
-            .update({ read: true })
-            .eq("read", false)
-            .eq("user_id", user.id),
-          supabase
-            .from("messages")
-            .update({ read_at: new Date().toISOString() })
-            .is("read_at", null)
-            .eq("receiver_id", user.id)
-        ]);
-        
-        // Invalidate the notifications query to refresh the data
-        queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      } catch (error) {
-        console.error("Error marking all notifications as read:", error);
-      }
+    try {
+      // Mark all notifications as read
+      await Promise.all([
+        supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("read", false)
+          .eq("user_id", user.id),
+        supabase
+          .from("messages")
+          .update({ read_at: new Date().toISOString() })
+          .is("read_at", null)
+          .eq("receiver_id", user.id)
+      ]);
+      
+      // Invalidate the notifications query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
     }
   };
 
   return (
     <div className="relative">
       {unreadCount > 0 ? (
-        <NotificationBadge unreadCount={unreadCount} onClick={() => handleDialogOpen(true)} />
+        <NotificationBadge unreadCount={unreadCount} onClick={() => setIsOpen(true)} />
       ) : (
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => handleDialogOpen(true)}
+          onClick={() => setIsOpen(true)}
           className="relative"
         >
           <Bell className="h-5 w-5" />
         </Button>
       )}
 
-      <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Notifications</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Notifications</DialogTitle>
+              {unreadCount > 0 && (
+                <Button onClick={handleMarkAllAsRead} variant="outline" size="sm">
+                  Mark all as read
+                </Button>
+              )}
+            </div>
             <DialogDescription>Your recent notifications</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-4">
