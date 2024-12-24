@@ -40,7 +40,7 @@ const NotificationsMenu = () => {
             )
           `)
           .eq("receiver_id", user.id)
-          .eq("read", false)
+          .is("read_at", null)
           .order("created_at", { ascending: false })
       ]);
 
@@ -58,7 +58,7 @@ const NotificationsMenu = () => {
           sender_id: message.sender_id
         },
         created_at: message.created_at,
-        read: message.read
+        read: message.read_at !== null
       }));
 
       return [...notificationsData.data, ...messageNotifications].sort(
@@ -86,7 +86,7 @@ const NotificationsMenu = () => {
         const messageId = notification.id.replace('message-', '');
         await supabase
           .from("messages")
-          .update({ read: true })
+          .update({ read_at: new Date().toISOString() })
           .eq("id", messageId);
       } else {
         // Handle regular notifications
@@ -120,8 +120,8 @@ const NotificationsMenu = () => {
             .eq("user_id", user.id),
           supabase
             .from("messages")
-            .update({ read: true })
-            .eq("read", false)
+            .update({ read_at: new Date().toISOString() })
+            .is("read_at", null)
             .eq("receiver_id", user.id)
         ]);
         
