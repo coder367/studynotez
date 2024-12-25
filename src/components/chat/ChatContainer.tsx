@@ -19,7 +19,6 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
   const [isUploading, setIsUploading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const isInitialLoad = useRef(true);
 
   const { data: messages = [], refetch: refetchMessages } = useQuery({
     queryKey: ["messages", activeChat],
@@ -33,7 +32,7 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
             avatar_url
           )
         `)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false }); // Changed to descending order
 
       if (activeChat === "public") {
         query.is("receiver_id", null);
@@ -49,29 +48,6 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
     },
     enabled: !!currentUser,
   });
-
-  // Scroll to bottom on initial load and new messages
-  useEffect(() => {
-    const scrollToBottom = () => {
-      if (scrollAreaRef.current) {
-        const scrollArea = scrollAreaRef.current;
-        scrollArea.scrollTop = scrollArea.scrollHeight;
-      }
-    };
-
-    // Scroll immediately and after a short delay to handle dynamic content
-    scrollToBottom();
-    const scrollTimeout = setTimeout(scrollToBottom, 100);
-    
-    return () => clearTimeout(scrollTimeout);
-  }, [messages]);
-
-  // Focus input when chat changes
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [activeChat]);
 
   // Subscribe to new messages
   useEffect(() => {
@@ -90,6 +66,13 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
       supabase.removeChannel(channel);
     };
   }, [refetchMessages]);
+
+  // Focus input when chat changes
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [activeChat]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -163,9 +146,6 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
       setMessage("");
       setSelectedFile(null);
-      if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-      }
     } catch (error: any) {
       toast({
         title: "Error",
