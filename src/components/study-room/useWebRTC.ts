@@ -23,8 +23,19 @@ export const useWebRTC = (
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
-      ]
+        { urls: 'stun:stun4.l.google.com:19302' },
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        }
+      ],
+      iceCandidatePoolSize: 10
     });
 
     // Add local tracks to the peer connection
@@ -67,6 +78,11 @@ export const useWebRTC = (
       }
     };
 
+    // Log ICE connection state changes
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log('ICE connection state:', peerConnection.iceConnectionState);
+    };
+
     peerConnections.current.set(peerId, peerConnection);
     return peerConnection;
   }, [roomId, localStream, addParticipant, removeParticipant]);
@@ -86,7 +102,10 @@ export const useWebRTC = (
         const peerConnection = createPeerConnection(peerId);
         
         try {
-          const offer = await peerConnection.createOffer();
+          const offer = await peerConnection.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true
+          });
           await peerConnection.setLocalDescription(offer);
           
           await channel.send({

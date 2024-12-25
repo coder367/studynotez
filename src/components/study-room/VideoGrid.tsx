@@ -16,9 +16,19 @@ export const VideoGrid = ({
   audioLevel, 
   isAudioEnabled 
 }: VideoGridProps) => {
-  const gridCols = participants.size <= 1 ? 1 : 
-                   participants.size <= 4 ? 2 : 
-                   participants.size <= 9 ? 3 : 4;
+  // Filter out any duplicate participants and local stream
+  const uniqueParticipants = new Map(
+    Array.from(participants.entries()).filter(([id, participant]) => {
+      return id !== "local" && participant.stream !== localStream;
+    })
+  );
+
+  const totalParticipants = uniqueParticipants.size + (localStream ? 1 : 0);
+  const gridCols = totalParticipants <= 1 ? 1 : 
+                   totalParticipants <= 4 ? 2 : 
+                   totalParticipants <= 9 ? 3 : 4;
+
+  console.log("Rendering video grid with participants:", uniqueParticipants.size);
 
   return (
     <div 
@@ -36,16 +46,14 @@ export const VideoGrid = ({
           isAudioEnabled={isAudioEnabled}
         />
       )}
-      {Array.from(participants.entries()).map(([id, participant]) => (
-        id !== "local" && (
-          <ParticipantVideo
-            key={id}
-            participant={participant}
-            userName={participant.username}
-            audioLevel={0}
-            isAudioEnabled={true}
-          />
-        )
+      {Array.from(uniqueParticipants.entries()).map(([id, participant]) => (
+        <ParticipantVideo
+          key={id}
+          participant={participant}
+          userName={participant.username}
+          audioLevel={0}
+          isAudioEnabled={true}
+        />
       ))}
     </div>
   );
