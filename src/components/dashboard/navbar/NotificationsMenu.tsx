@@ -154,11 +154,6 @@ const NotificationsMenu = () => {
         className="relative"
       >
         <Bell className="h-5 w-5" />
-        {notifications.length > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
-            {notifications.length}
-          </span>
-        )}
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
