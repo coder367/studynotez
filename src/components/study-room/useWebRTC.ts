@@ -8,6 +8,7 @@ export const useWebRTC = (
   removeParticipant: (id: string) => void
 ) => {
   const peerConnections = useRef(new Map<string, RTCPeerConnection>());
+  const iceCandidatesQueue = useRef(new Map<string, RTCIceCandidate[]>());
 
   const createPeerConnection = useCallback((peerId: string) => {
     console.log('Creating new peer connection for:', peerId);
@@ -43,7 +44,6 @@ export const useWebRTC = (
       iceCandidatePoolSize: 10
     });
 
-    // Add local tracks to the peer connection
     if (localStream) {
       localStream.getTracks().forEach(track => {
         console.log('Adding track to peer connection:', track.kind);
@@ -51,7 +51,6 @@ export const useWebRTC = (
       });
     }
 
-    // Handle incoming tracks
     peerConnection.ontrack = (event) => {
       console.log('Received remote track:', event.track.kind);
       if (event.streams?.[0]) {
@@ -60,7 +59,6 @@ export const useWebRTC = (
       }
     };
 
-    // Handle ICE candidates
     peerConnection.onicecandidate = async (event) => {
       if (event.candidate) {
         console.log('Sending ICE candidate to:', peerId);
@@ -72,19 +70,15 @@ export const useWebRTC = (
       }
     };
 
-    // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
       console.log('Connection state changed:', peerConnection.connectionState);
-      if (peerConnection.connectionState === 'failed' || 
-          peerConnection.connectionState === 'closed' ||
-          peerConnection.connectionState === 'disconnected') {
+      if (['failed', 'closed', 'disconnected'].includes(peerConnection.connectionState)) {
         console.log('Removing participant due to connection state:', peerId);
         removeParticipant(peerId);
         peerConnections.current.delete(peerId);
       }
     };
 
-    // Log ICE connection state changes
     peerConnection.oniceconnectionstatechange = () => {
       console.log('ICE connection state:', peerConnection.iceConnectionState);
       if (peerConnection.iceConnectionState === 'failed') {
@@ -96,6 +90,50 @@ export const useWebRTC = (
     peerConnections.current.set(peerId, peerConnection);
     return peerConnection;
   }, [roomId, localStream, addParticipant, removeParticipant]);
+
+  const addIceCandidate = async (peerId: string, candidate: RTCIceCandidate) => {
+    const peerConnection = peerConnections.current.get(peerId);
+    if (!peerConnection) {
+      // Queue the candidate if the peer connection doesn't exist yet
+      const queue = iceCandidatesQueue.current.get(peerId) || [];
+      queue.push(candidate);
+      iceCandidatesQueue.current.set(peerId, queue);
+      return;
+    }
+
+    if (peerConnection.remoteDescription) {
+      try {
+        await peerConnection.addIceCandidate(candidate);
+      } catch (error) {
+        console.error('Error adding ICE candidate:', error);
+      }
+    } else {
+      // Queue the candidate if remote description is not set yet
+      const queue = iceCandidatesQueue.current.get(peerId) || [];
+      queue.push(candidate);
+      iceCandidatesQueue.current.set(peerId, queue);
+    }
+  };
+
+  const processQueuedCandidates = async (peerId: string) => {
+    const peerConnection = peerConnections.current.get(peerId);
+    const queuedCandidates = iceCandidatesQueue.current.get(peerId) || [];
+    
+    if (peerConnection?.remoteDescription && queuedCandidates.length > 0) {
+      console.log(`Processing ${queuedCandidates.length} queued candidates for:`, peerId);
+      
+      for (const candidate of queuedCandidates) {
+        try {
+          await peerConnection.addIceCandidate(candidate);
+        } catch (error) {
+          console.error('Error adding queued ICE candidate:', error);
+        }
+      }
+      
+      // Clear the queue after processing
+      iceCandidatesQueue.current.delete(peerId);
+    }
+  };
 
   useEffect(() => {
     if (!localStream) return;
@@ -112,10 +150,7 @@ export const useWebRTC = (
         const peerConnection = createPeerConnection(peerId);
         
         try {
-          const offer = await peerConnection.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: true
-          });
+          const offer = await peerConnection.createOffer();
           await peerConnection.setLocalDescription(offer);
           
           await channel.send({
@@ -134,6 +169,7 @@ export const useWebRTC = (
         try {
           const peerConnection = createPeerConnection(peerId);
           await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+          await processQueuedCandidates(peerId);
           
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);
@@ -155,26 +191,18 @@ export const useWebRTC = (
         if (peerConnection) {
           try {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            await processQueuedCandidates(peerId);
           } catch (error) {
             console.error('Error setting remote description:', error);
           }
         }
       })
-      .on('broadcast', { event: 'ice-candidate' }, ({ payload }) => {
+      .on('broadcast', { event: 'ice-candidate' }, async ({ payload }) => {
         const { peerId, candidate } = payload;
         console.log('Received ICE candidate from:', peerId);
-        
-        const peerConnection = peerConnections.current.get(peerId);
-        if (peerConnection) {
-          try {
-            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch (error) {
-            console.error('Error adding ICE candidate:', error);
-          }
-        }
+        await addIceCandidate(peerId, new RTCIceCandidate(candidate));
       });
 
-    // Announce presence to other peers
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
         const { data: { user } } = await supabase.auth.getUser();
@@ -195,6 +223,7 @@ export const useWebRTC = (
         connection.close();
       });
       peerConnections.current.clear();
+      iceCandidatesQueue.current.clear();
     };
   }, [roomId, localStream, createPeerConnection]);
 
