@@ -33,6 +33,11 @@ export const useWebRTC = (
           urls: 'turn:openrelay.metered.ca:443',
           username: 'openrelayproject',
           credential: 'openrelayproject',
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
         }
       ],
       iceCandidatePoolSize: 10
@@ -71,7 +76,8 @@ export const useWebRTC = (
     peerConnection.onconnectionstatechange = () => {
       console.log('Connection state changed:', peerConnection.connectionState);
       if (peerConnection.connectionState === 'failed' || 
-          peerConnection.connectionState === 'closed') {
+          peerConnection.connectionState === 'closed' ||
+          peerConnection.connectionState === 'disconnected') {
         console.log('Removing participant due to connection state:', peerId);
         removeParticipant(peerId);
         peerConnections.current.delete(peerId);
@@ -81,6 +87,10 @@ export const useWebRTC = (
     // Log ICE connection state changes
     peerConnection.oniceconnectionstatechange = () => {
       console.log('ICE connection state:', peerConnection.iceConnectionState);
+      if (peerConnection.iceConnectionState === 'failed') {
+        console.log('Attempting to restart ICE');
+        peerConnection.restartIce();
+      }
     };
 
     peerConnections.current.set(peerId, peerConnection);

@@ -16,27 +16,34 @@ export const VideoGrid = ({
   audioLevel, 
   isAudioEnabled 
 }: VideoGridProps) => {
-  // Filter out any duplicate participants and local stream
+  console.log("VideoGrid rendering with participants:", participants.size);
+  
+  // Create a new Map excluding the local participant and any duplicates
   const uniqueParticipants = new Map(
     Array.from(participants.entries()).filter(([id, participant]) => {
+      // Filter out local participant and any participant with the same stream as local
       return id !== "local" && participant.stream !== localStream;
     })
   );
 
   const totalParticipants = uniqueParticipants.size + (localStream ? 1 : 0);
+  
+  // Calculate grid columns based on participant count
   const gridCols = totalParticipants <= 1 ? 1 : 
                    totalParticipants <= 4 ? 2 : 
                    totalParticipants <= 9 ? 3 : 4;
 
-  console.log("Rendering video grid with participants:", uniqueParticipants.size);
+  console.log("Rendering grid with unique participants:", uniqueParticipants.size);
+  console.log("Total participants including local:", totalParticipants);
 
   return (
     <div 
-      className={`grid gap-4`}
+      className={`grid gap-4 w-full`}
       style={{
         gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
       }}
     >
+      {/* Render local video first */}
       {localStream && (
         <ParticipantVideo
           participant={{ id: "local", stream: localStream }}
@@ -46,6 +53,8 @@ export const VideoGrid = ({
           isAudioEnabled={isAudioEnabled}
         />
       )}
+      
+      {/* Render remote participants */}
       {Array.from(uniqueParticipants.entries()).map(([id, participant]) => (
         <ParticipantVideo
           key={id}
