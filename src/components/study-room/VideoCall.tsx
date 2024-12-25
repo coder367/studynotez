@@ -8,6 +8,7 @@ import { useMediaStream } from "./useMediaStream";
 import { useRoomPresence } from "./useRoomPresence";
 import { useWebRTC } from "./useWebRTC";
 import { useToast } from "@/hooks/use-toast";
+import { VideoGrid } from "./VideoGrid";
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
@@ -31,8 +32,10 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   useWebRTC(roomId, localStream, addParticipant, removeParticipant);
 
   useEffect(() => {
+    console.log("Initializing media stream");
     initializeMedia();
     return () => {
+      console.log("Cleaning up media stream");
       stopAllTracks();
     };
   }, [isVoiceOnly, initializeMedia, stopAllTracks]);
@@ -78,29 +81,13 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {localStream && (
-          <ParticipantVideo
-            participant={{ id: "local", stream: localStream }}
-            isLocal={true}
-            userName={userName}
-            audioLevel={audioLevel}
-            isAudioEnabled={isAudioEnabled && !isVoiceOnly}
-          />
-        )}
-
-        {Array.from(participants.entries()).map(([id, participant]) => (
-          id !== "local" && (
-            <ParticipantVideo
-              key={id}
-              participant={participant}
-              userName={participant.username}
-              audioLevel={0}
-              isAudioEnabled={!isVoiceOnly}
-            />
-          )
-        ))}
-      </div>
+      <VideoGrid
+        participants={participants}
+        localStream={localStream}
+        userName={userName}
+        audioLevel={audioLevel}
+        isAudioEnabled={isAudioEnabled}
+      />
 
       <Controls
         isVoiceOnly={isVoiceOnly}

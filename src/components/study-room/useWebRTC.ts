@@ -20,7 +20,10 @@ export const useWebRTC = (
     const peerConnection = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
       ]
     });
 
@@ -36,6 +39,7 @@ export const useWebRTC = (
     peerConnection.ontrack = (event) => {
       console.log('Received remote track:', event.track.kind);
       if (event.streams?.[0]) {
+        console.log('Adding participant with stream');
         addParticipant(peerId, event.streams[0]);
       }
     };
@@ -57,6 +61,7 @@ export const useWebRTC = (
       console.log('Connection state changed:', peerConnection.connectionState);
       if (peerConnection.connectionState === 'failed' || 
           peerConnection.connectionState === 'closed') {
+        console.log('Removing participant due to connection state:', peerId);
         removeParticipant(peerId);
         peerConnections.current.delete(peerId);
       }
@@ -69,6 +74,7 @@ export const useWebRTC = (
   useEffect(() => {
     if (!localStream) return;
 
+    console.log('Setting up WebRTC for room:', roomId);
     const channel = supabase.channel(`room:${roomId}`)
       .on('broadcast', { event: 'peer-join' }, async ({ payload }) => {
         const { peerId } = payload;
@@ -139,9 +145,22 @@ export const useWebRTC = (
         }
       });
 
-    channel.subscribe();
+    // Announce presence to other peers
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await channel.send({
+            type: 'broadcast',
+            event: 'peer-join',
+            payload: { peerId: user.id }
+          });
+        }
+      }
+    });
 
     return () => {
+      console.log('Cleaning up WebRTC connections');
       channel.unsubscribe();
       peerConnections.current.forEach(connection => {
         connection.close();
