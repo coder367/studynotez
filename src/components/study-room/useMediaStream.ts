@@ -9,43 +9,44 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
 
   const initializeMedia = useCallback(async () => {
     try {
-      if (stream) return; // Don't reinitialize if we already have a stream
+      if (stream) return;
 
+      console.log("Requesting media permissions...");
       const constraints = {
-        audio: !isVoiceOnly,
-        video: true,
+        audio: true, // Always request audio
+        video: !isVoiceOnly,
       };
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log("Media stream obtained:", newStream.getTracks().map(t => t.kind));
       setStream(newStream);
-      setIsAudioEnabled(!isVoiceOnly);
-      setIsVideoEnabled(true);
+      setIsAudioEnabled(true);
+      setIsVideoEnabled(!isVoiceOnly);
 
-      // Set up audio level monitoring if audio is enabled
-      if (!isVoiceOnly) {
-        const context = new AudioContext();
-        const source = context.createMediaStreamSource(newStream);
-        const analyser = context.createAnalyser();
-        analyser.fftSize = 256;
-        source.connect(analyser);
-        setAudioContext(context);
+      // Set up audio level monitoring
+      const context = new AudioContext();
+      const source = context.createMediaStreamSource(newStream);
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      setAudioContext(context);
 
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        const updateAudioLevel = () => {
-          if (context.state === 'closed') return;
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-          setAudioLevel((average / 255) * 100);
-          requestAnimationFrame(updateAudioLevel);
-        };
-        updateAudioLevel();
-      }
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const updateAudioLevel = () => {
+        if (context.state === 'closed') return;
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        setAudioLevel((average / 255) * 100);
+        requestAnimationFrame(updateAudioLevel);
+      };
+      updateAudioLevel();
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
   }, [isVoiceOnly, stream]);
 
   const stopAllTracks = useCallback(() => {
+    console.log("Stopping all media tracks");
     if (stream) {
       stream.getTracks().forEach(track => {
         track.stop();
@@ -62,14 +63,15 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   }, [stream, audioContext]);
 
   const toggleAudio = useCallback(() => {
-    if (stream && !isVoiceOnly) {
+    if (stream) {
       const audioTrack = stream.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
+        console.log("Audio track toggled:", audioTrack.enabled);
       }
     }
-  }, [stream, isVoiceOnly]);
+  }, [stream]);
 
   const toggleVideo = useCallback(() => {
     if (stream) {
@@ -77,6 +79,7 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
+        console.log("Video track toggled:", videoTrack.enabled);
       }
     }
   }, [stream]);

@@ -27,6 +27,12 @@ export const usePeerConnection = (
       }
     };
 
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log('New ICE candidate:', event.candidate.type);
+      }
+    };
+
     peerConnection.onconnectionstatechange = () => {
       console.log('Connection state changed:', peerConnection.connectionState);
       if (['failed', 'closed', 'disconnected'].includes(peerConnection.connectionState)) {

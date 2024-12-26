@@ -1,8 +1,21 @@
 import { ParticipantVideoProps } from "@/types/video-call";
 import { Progress } from "@/components/ui/progress";
-import { Mic } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 
-export const ParticipantVideo = ({ participant, isLocal, userName, audioLevel, isAudioEnabled }: ParticipantVideoProps) => {
+export const ParticipantVideo = ({ 
+  participant, 
+  isLocal, 
+  userName, 
+  audioLevel, 
+  isAudioEnabled 
+}: ParticipantVideoProps) => {
+  console.log("Rendering participant video:", {
+    id: participant.id,
+    isLocal,
+    hasStream: !!participant.stream,
+    audioLevel
+  });
+
   return (
     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
       {participant.stream ? (
@@ -10,6 +23,7 @@ export const ParticipantVideo = ({ participant, isLocal, userName, audioLevel, i
           ref={(el) => {
             if (el && participant.stream) {
               el.srcObject = participant.stream;
+              el.play().catch(e => console.error("Error playing video:", e));
             }
           }}
           autoPlay
@@ -19,12 +33,29 @@ export const ParticipantVideo = ({ participant, isLocal, userName, audioLevel, i
         />
       ) : (
         <div className="flex items-center justify-center h-full">
-          <span className="text-muted-foreground">{participant.username || userName || 'Anonymous'}</span>
+          <span className="text-muted-foreground">
+            {participant.username || userName || 'Anonymous'}
+          </span>
         </div>
       )}
-      <div className="absolute top-2 left-2 bg-black/50 px-2 py-1 rounded text-white text-sm">
-        {participant.username || userName || 'Anonymous'} {isLocal && '(You)'}
+      
+      <div className="absolute top-2 left-2 right-2 flex justify-between items-center">
+        <span className="bg-black/50 px-2 py-1 rounded text-white text-sm">
+          {participant.username || userName || 'Anonymous'} {isLocal && '(You)'}
+        </span>
+        <div className="flex gap-2">
+          {isAudioEnabled !== undefined && (
+            <div className="bg-black/50 p-1 rounded">
+              {isAudioEnabled ? (
+                <Mic className="h-4 w-4 text-white" />
+              ) : (
+                <MicOff className="h-4 w-4 text-white" />
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
       {isAudioEnabled && audioLevel !== undefined && (
         <div className="absolute bottom-2 left-2 right-2 flex items-center gap-2 px-2 bg-black/50 rounded">
           <Mic className="h-4 w-4 text-white" />

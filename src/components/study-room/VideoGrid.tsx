@@ -21,28 +21,25 @@ export const VideoGrid = ({
   // Filter out duplicates and create a new Map of remote participants
   const remoteParticipants = new Map(
     Array.from(participants.entries()).filter(([id, participant]) => {
-      // Only keep remote participants with active streams
       return participant.stream && id !== "local";
     })
   );
 
   const totalParticipants = remoteParticipants.size + (localStream ? 1 : 0);
-  
+  console.log("Total participants including local:", totalParticipants);
+  console.log("Remote participants:", remoteParticipants.size);
+
   // Calculate grid layout
   const gridCols = totalParticipants <= 1 ? 1 : 
                    totalParticipants <= 4 ? 2 : 
                    totalParticipants <= 9 ? 3 : 4;
 
-  console.log("Remote participants:", remoteParticipants.size);
-  console.log("Total participants including local:", totalParticipants);
+  const gridClassName = `grid gap-4 w-full h-full grid-cols-1 ${
+    totalParticipants > 1 && `md:grid-cols-${gridCols}`
+  }`;
 
   return (
-    <div 
-      className="grid gap-4 w-full h-full"
-      style={{
-        gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-      }}
-    >
+    <div className={gridClassName}>
       {/* Render local video first */}
       {localStream && (
         <div className="relative aspect-video">
