@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface NotificationItemProps {
   notification: {
@@ -10,11 +11,13 @@ interface NotificationItemProps {
     read_at: string | null;
   };
   onNotificationClick: (notification: any) => void;
+  isExiting?: boolean;
 }
 
 const NotificationItem = ({
   notification,
   onNotificationClick,
+  isExiting = false
 }: NotificationItemProps) => {
   const getNotificationContent = () => {
     switch (notification.type) {
@@ -30,7 +33,12 @@ const NotificationItem = ({
   };
 
   return (
-    <div className="flex flex-col gap-2 p-4 rounded-lg border border-border bg-card">
+    <div 
+      className={cn(
+        "flex flex-col gap-2 p-4 rounded-lg border border-border bg-card notification-item",
+        isExiting && "notification-item-exit"
+      )}
+    >
       <div 
         className="cursor-pointer"
         onClick={() => onNotificationClick(notification)}

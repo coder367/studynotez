@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +42,7 @@ interface NotificationItemType {
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [exitingNotifications, setExitingNotifications] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -111,30 +112,34 @@ const NotificationsMenu = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Mark all notifications as read
-      await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("user_id", user.id)
-        .is("read", false);
-
-      // Mark all messages as read
-      await supabase
-        .from("messages")
-        .update({ read_at: new Date().toISOString() })
-        .eq("receiver_id", user.id)
-        .is("read_at", null);
-
-      await refetchNotifications();
-      setIsOpen(false);
+      setExitingNotifications(notifications.map(n => n.id));
       
-      toast({
-        title: "Success",
-        description: "All notifications marked as read",
-      });
+      setTimeout(async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Mark all notifications as read
+        await supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("user_id", user.id)
+          .is("read", false);
+
+        // Mark all messages as read
+        await supabase
+          .from("messages")
+          .update({ read_at: new Date().toISOString() })
+          .eq("receiver_id", user.id)
+          .is("read_at", null);
+
+        await refetchNotifications();
+        setExitingNotifications([]);
+        
+        toast({
+          title: "Success",
+          description: "All notifications marked as read",
+        });
+      }, 500); // Wait for animation to complete
     } catch (error: any) {
       console.error("Error marking notifications as read:", error);
       toast({
@@ -159,7 +164,7 @@ const NotificationsMenu = () => {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-8">
               <DialogTitle>Notifications</DialogTitle>
               {notifications.length > 0 && (
                 <Button onClick={handleMarkAllAsRead} variant="outline" size="sm">
@@ -176,6 +181,7 @@ const NotificationsMenu = () => {
                   key={notification.id}
                   notification={notification}
                   onNotificationClick={handleNotificationClick}
+                  isExiting={exitingNotifications.includes(notification.id)}
                 />
               ))
             ) : (
