@@ -1,5 +1,7 @@
 import { ParticipantVideo } from "./ParticipantVideo";
 import { Participant } from "@/types/video-call";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoGridProps {
   participants: Map<string, Participant>;
@@ -16,14 +18,28 @@ export const VideoGrid = ({
   audioLevel, 
   isAudioEnabled 
 }: VideoGridProps) => {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
+
   console.log("VideoGrid rendering with participants:", participants.size);
   
-  // Create array of participants for easier rendering
-  const participantArray = Array.from(participants.values());
-  const totalParticipants = participantArray.length + (localStream ? 1 : 0);
+  // Filter out the current user from remote participants
+  const remoteParticipants = Array.from(participants.values())
+    .filter(p => p.id !== currentUserId);
+  
+  const totalParticipants = remoteParticipants.length + (localStream ? 1 : 0);
   
   console.log("Total participants including local:", totalParticipants);
-  console.log("Remote participants:", participantArray.length);
+  console.log("Remote participants:", remoteParticipants.length);
 
   // Calculate grid layout
   const gridCols = totalParticipants <= 1 ? 1 : 
@@ -37,11 +53,11 @@ export const VideoGrid = ({
   return (
     <div className={gridClassName}>
       {/* Render local video first */}
-      {localStream && (
+      {localStream && currentUserId && (
         <div className="relative aspect-video">
           <ParticipantVideo
             participant={{ 
-              id: "local", 
+              id: currentUserId,
               stream: localStream,
               username: userName,
               isAudioEnabled,
@@ -56,7 +72,7 @@ export const VideoGrid = ({
       )}
       
       {/* Render remote participants */}
-      {participantArray.map((participant) => (
+      {remoteParticipants.map((participant) => (
         <div key={participant.id} className="relative aspect-video">
           <ParticipantVideo
             participant={participant}

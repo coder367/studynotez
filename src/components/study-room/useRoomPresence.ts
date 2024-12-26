@@ -11,13 +11,16 @@ export const useRoomPresence = (roomId: string, userName: string) => {
       const newMap = new Map(prev);
       const existing = newMap.get(userId);
       
-      newMap.set(userId, {
-        id: userId,
-        stream: stream || existing?.stream,
-        username: userName,
-        isAudioEnabled: true,
-        isVideoEnabled: true
-      });
+      // Only update if the participant doesn't exist or if we're adding a stream
+      if (!existing || stream) {
+        newMap.set(userId, {
+          id: userId,
+          stream: stream || existing?.stream,
+          username: userName,
+          isAudioEnabled: true,
+          isVideoEnabled: true
+        });
+      }
       
       console.log("Updated participants:", Array.from(newMap.entries()));
       return newMap;
@@ -61,31 +64,16 @@ export const useRoomPresence = (roomId: string, userName: string) => {
         
         // Keep existing streams for participants that are still present
         setParticipants(prev => {
+          const finalParticipants = new Map(newParticipants);
           prev.forEach((participant, userId) => {
-            if (newParticipants.has(userId) && participant.stream) {
-              newParticipants.set(userId, {
-                ...newParticipants.get(userId)!,
+            if (finalParticipants.has(userId) && participant.stream) {
+              finalParticipants.set(userId, {
+                ...finalParticipants.get(userId)!,
                 stream: participant.stream
               });
             }
           });
-          return newParticipants;
-        });
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('User joined:', newPresences);
-        newPresences.forEach((presence: any) => {
-          if (presence.user_id) {
-            addParticipant(presence.user_id);
-          }
-        });
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('User left:', leftPresences);
-        leftPresences.forEach((presence: any) => {
-          if (presence.user_id) {
-            removeParticipant(presence.user_id);
-          }
+          return finalParticipants;
         });
       });
 
@@ -106,7 +94,7 @@ export const useRoomPresence = (roomId: string, userName: string) => {
       console.log("Cleaning up room presence");
       channel.unsubscribe();
     };
-  }, [roomId, userName, addParticipant, removeParticipant]);
+  }, [roomId, userName]);
 
   return { participants, addParticipant, removeParticipant };
 };

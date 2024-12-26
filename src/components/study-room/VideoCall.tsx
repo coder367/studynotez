@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { VideoCallProps } from "@/types/video-call";
-import { ParticipantVideo } from "./ParticipantVideo";
 import { Controls } from "./Controls";
 import { useMediaStream } from "./useMediaStream";
 import { useRoomPresence } from "./useRoomPresence";
