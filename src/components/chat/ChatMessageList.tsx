@@ -10,25 +10,25 @@ interface ChatMessageListProps {
 export const ChatMessageList = ({ messages, currentUser }: ChatMessageListProps) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    const scrollToBottom = () => {
-      if (scrollAreaRef.current) {
-        const scrollArea = scrollAreaRef.current;
+    if (scrollAreaRef.current) {
+      const scrollArea = scrollAreaRef.current;
+      // Set scroll to bottom immediately and after a short delay to handle dynamic content
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+      setTimeout(() => {
         scrollArea.scrollTop = scrollArea.scrollHeight;
-      }
-    };
-
-    // Scroll immediately and after a short delay to handle dynamic content
-    scrollToBottom();
-    const scrollTimeout = setTimeout(scrollToBottom, 100);
-    
-    return () => clearTimeout(scrollTimeout);
+      }, 100);
+    }
   }, [messages]);
 
   return (
-    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-      <div className="space-y-4">
+    <ScrollArea 
+      className="flex-1 p-4" 
+      ref={scrollAreaRef}
+      style={{ display: 'flex', flexDirection: 'column' }}
+    >
+      <div className="space-y-4 min-h-full">
         {messages.map((msg) => (
           <ChatMessage
             key={msg.id}

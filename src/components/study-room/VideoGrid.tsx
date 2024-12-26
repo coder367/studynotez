@@ -18,51 +18,54 @@ export const VideoGrid = ({
 }: VideoGridProps) => {
   console.log("VideoGrid rendering with participants:", participants.size);
   
-  // Create a new Map excluding the local participant and any duplicates
-  const uniqueParticipants = new Map(
+  // Filter out duplicates and create a new Map of remote participants
+  const remoteParticipants = new Map(
     Array.from(participants.entries()).filter(([id, participant]) => {
-      // Filter out local participant and any participant with the same stream as local
-      return id !== "local" && participant.stream !== localStream;
+      // Only keep remote participants with active streams
+      return participant.stream && id !== "local";
     })
   );
 
-  const totalParticipants = uniqueParticipants.size + (localStream ? 1 : 0);
+  const totalParticipants = remoteParticipants.size + (localStream ? 1 : 0);
   
-  // Calculate grid columns based on participant count
+  // Calculate grid layout
   const gridCols = totalParticipants <= 1 ? 1 : 
                    totalParticipants <= 4 ? 2 : 
                    totalParticipants <= 9 ? 3 : 4;
 
-  console.log("Rendering grid with unique participants:", uniqueParticipants.size);
+  console.log("Remote participants:", remoteParticipants.size);
   console.log("Total participants including local:", totalParticipants);
 
   return (
     <div 
-      className={`grid gap-4 w-full`}
+      className="grid gap-4 w-full h-full"
       style={{
         gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
       }}
     >
       {/* Render local video first */}
       {localStream && (
-        <ParticipantVideo
-          participant={{ id: "local", stream: localStream }}
-          isLocal={true}
-          userName={userName}
-          audioLevel={audioLevel}
-          isAudioEnabled={isAudioEnabled}
-        />
+        <div className="relative aspect-video">
+          <ParticipantVideo
+            participant={{ id: "local", stream: localStream }}
+            isLocal={true}
+            userName={userName}
+            audioLevel={audioLevel}
+            isAudioEnabled={isAudioEnabled}
+          />
+        </div>
       )}
       
       {/* Render remote participants */}
-      {Array.from(uniqueParticipants.entries()).map(([id, participant]) => (
-        <ParticipantVideo
-          key={id}
-          participant={participant}
-          userName={participant.username}
-          audioLevel={0}
-          isAudioEnabled={true}
-        />
+      {Array.from(remoteParticipants.entries()).map(([id, participant]) => (
+        <div key={id} className="relative aspect-video">
+          <ParticipantVideo
+            participant={participant}
+            userName={participant.username}
+            audioLevel={0}
+            isAudioEnabled={true}
+          />
+        </div>
       ))}
     </div>
   );

@@ -16,26 +16,19 @@ export const useWebRTC = (
     console.log('Adding ICE candidate for peer:', peerId);
     const peerConnection = peerConnections.current.get(peerId);
     
-    if (!peerConnection) {
-      console.log('Queueing ICE candidate - no peer connection yet');
+    if (!peerConnection?.remoteDescription) {
+      console.log('Queueing ICE candidate - no remote description yet');
       const queue = iceCandidatesQueue.current.get(peerId) || [];
       queue.push(candidate);
       iceCandidatesQueue.current.set(peerId, queue);
       return;
     }
 
-    if (peerConnection.remoteDescription) {
-      try {
-        await peerConnection.addIceCandidate(candidate);
-        console.log('ICE candidate added successfully');
-      } catch (error) {
-        console.error('Error adding ICE candidate:', error);
-      }
-    } else {
-      console.log('Queueing ICE candidate - no remote description yet');
-      const queue = iceCandidatesQueue.current.get(peerId) || [];
-      queue.push(candidate);
-      iceCandidatesQueue.current.set(peerId, queue);
+    try {
+      await peerConnection.addIceCandidate(candidate);
+      console.log('ICE candidate added successfully');
+    } catch (error) {
+      console.error('Error adding ICE candidate:', error);
     }
   };
 
@@ -74,17 +67,6 @@ export const useWebRTC = (
         const peerConnection = createPeerConnection(peerId);
         peerConnections.current.set(peerId, peerConnection);
 
-        peerConnection.onicecandidate = async (event) => {
-          if (event.candidate) {
-            console.log('Sending ICE candidate to:', peerId);
-            await channel.send({
-              type: 'broadcast',
-              event: 'ice-candidate',
-              payload: { peerId, candidate: event.candidate }
-            });
-          }
-        };
-        
         try {
           const offer = await peerConnection.createOffer();
           await peerConnection.setLocalDescription(offer);
@@ -94,6 +76,17 @@ export const useWebRTC = (
             event: 'offer',
             payload: { peerId, offer }
           });
+
+          peerConnection.onicecandidate = async (event) => {
+            if (event.candidate) {
+              console.log('Sending ICE candidate to:', peerId);
+              await channel.send({
+                type: 'broadcast',
+                event: 'ice-candidate',
+                payload: { peerId, candidate: event.candidate }
+              });
+            }
+          };
         } catch (error) {
           console.error('Error creating offer:', error);
         }
