@@ -3,6 +3,8 @@ export interface Participant {
   stream?: MediaStream;
   videoRef?: HTMLVideoElement | null;
   username?: string;
+  isAudioEnabled?: boolean;
+  isVideoEnabled?: boolean;
 }
 
 export interface VideoCallProps {

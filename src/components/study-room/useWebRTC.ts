@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { usePeerConnections } from './usePeerConnections';
 import { useIceCandidates } from './useIceCandidates';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export const useWebRTC = (
   roomId: string, 
