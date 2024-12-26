@@ -1,4 +1,4 @@
-export const getRTCConfiguration = () => ({
+export const getRTCConfiguration = (): RTCConfiguration => ({
   iceServers: [
     {
       urls: [
@@ -10,7 +10,7 @@ export const getRTCConfiguration = () => ({
     },
   ],
   iceCandidatePoolSize: 10,
-  bundlePolicy: 'max-bundle',
-  rtcpMuxPolicy: 'require',
-  iceTransportPolicy: 'all',
+  bundlePolicy: 'max-bundle' as RTCBundlePolicy,
+  rtcpMuxPolicy: 'require' as RTCRtcpMuxPolicy,
+  iceTransportPolicy: 'all' as RTCIceTransportPolicy,
 });
