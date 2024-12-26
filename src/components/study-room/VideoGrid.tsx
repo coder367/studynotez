@@ -30,16 +30,23 @@ export const VideoGrid = ({
     getCurrentUser();
   }, []);
 
-  console.log("VideoGrid rendering with participants:", participants.size);
+  console.log("VideoGrid rendering with participants:", {
+    total: participants.size,
+    currentUserId,
+    participantIds: Array.from(participants.keys())
+  });
   
   // Filter out the current user from remote participants
   const remoteParticipants = Array.from(participants.values())
-    .filter(p => p.id !== currentUserId);
+    .filter(p => p.id !== currentUserId && p.stream); // Only include participants with streams
   
   const totalParticipants = remoteParticipants.length + (localStream ? 1 : 0);
   
-  console.log("Total participants including local:", totalParticipants);
-  console.log("Remote participants:", remoteParticipants.length);
+  console.log("Participants breakdown:", {
+    total: totalParticipants,
+    remote: remoteParticipants.length,
+    hasLocalStream: !!localStream
+  });
 
   // Calculate grid layout
   const gridCols = totalParticipants <= 1 ? 1 : 

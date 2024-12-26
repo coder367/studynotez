@@ -21,7 +21,16 @@ export const useWebRTC = (
   const handlePeerJoin = async (channel: RealtimeChannel, peerId: string) => {
     console.log('Handling peer join:', peerId);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user || peerId === user.id) return;
+    if (!user || peerId === user.id) {
+      console.log('Ignoring self join event');
+      return;
+    }
+    
+    // Check if we already have a connection for this peer
+    if (peerConnections.current.has(peerId)) {
+      console.log('Connection already exists for peer:', peerId);
+      return;
+    }
     
     const peerConnection = createPeerConnection(peerId);
     console.log('Created peer connection for:', peerId);
@@ -52,8 +61,12 @@ export const useWebRTC = (
     console.log('Received offer from:', peerId);
     
     try {
-      const peerConnection = createPeerConnection(peerId);
-      console.log('Created peer connection for offer from:', peerId);
+      // Check if we already have a connection
+      let peerConnection = peerConnections.current.get(peerId);
+      if (!peerConnection) {
+        peerConnection = createPeerConnection(peerId);
+        console.log('Created new peer connection for offer from:', peerId);
+      }
 
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
       await processQueuedCandidates(peerId, peerConnection);
@@ -89,7 +102,10 @@ export const useWebRTC = (
   };
 
   useEffect(() => {
-    if (!localStream) return;
+    if (!localStream) {
+      console.log('No local stream available, skipping WebRTC setup');
+      return;
+    }
 
     console.log('Setting up WebRTC for room:', roomId);
     const channel = supabase.channel(`room:${roomId}`)
