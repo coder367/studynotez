@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
-import { ChatMessage } from "@/components/chat/ChatMessage";
+import { ChatMessageList } from "@/components/chat/ChatMessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useChatMessages } from "./useChatMessages";
 
 interface ChatContainerProps {
   activeChat: "public" | { id: string; full_name: string } | null;
@@ -17,53 +15,9 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
   const [message, setMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: messages = [], refetch: refetchMessages } = useQuery({
-    queryKey: ["messages", activeChat],
-    queryFn: async () => {
-      const query = supabase
-        .from("messages")
-        .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey (
-            full_name,
-            avatar_url
-          )
-        `)
-        .order("created_at", { ascending: true });
-
-      if (activeChat === "public") {
-        query.is("receiver_id", null);
-      } else if (activeChat) {
-        query.or(
-          `and(sender_id.eq.${currentUser},receiver_id.eq.${(activeChat as any).id}),and(sender_id.eq.${(activeChat as any).id},receiver_id.eq.${currentUser})`
-        );
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!currentUser,
-  });
-
-  // Auto-scroll to bottom on new messages and initial load
-  useEffect(() => {
-    const scrollToBottom = () => {
-      if (scrollAreaRef.current) {
-        const scrollArea = scrollAreaRef.current;
-        scrollArea.scrollTop = scrollArea.scrollHeight;
-      }
-    };
-
-    // Scroll immediately and after a short delay to handle dynamic content
-    scrollToBottom();
-    const scrollTimeout = setTimeout(scrollToBottom, 100);
-    
-    return () => clearTimeout(scrollTimeout);
-  }, [messages]);
+  const { data: messages = [], refetch: refetchMessages } = useChatMessages(activeChat, currentUser);
 
   // Subscribe to new messages
   useEffect(() => {
@@ -162,11 +116,6 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
       setMessage("");
       setSelectedFile(null);
-      
-      // Scroll to bottom after sending message
-      if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -180,23 +129,7 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
   return (
     <>
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
-          {messages.map((msg) => (
-            <ChatMessage
-              key={msg.id}
-              content={msg.content}
-              senderId={msg.sender_id}
-              senderName={msg.sender?.full_name}
-              currentUserId={currentUser}
-              fileUrl={msg.file_url}
-              fileType={msg.file_type}
-              createdAt={msg.created_at}
-            />
-          ))}
-        </div>
-      </ScrollArea>
-
+      <ChatMessageList messages={messages} currentUser={currentUser} />
       <ChatInput
         message={message}
         onMessageChange={setMessage}
