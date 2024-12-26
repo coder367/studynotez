@@ -26,7 +26,11 @@ export const usePeerConnections = (
     peerConnection.ontrack = (event) => {
       console.log('Received remote track:', event.track.kind);
       if (event.streams?.[0]) {
-        console.log('Adding participant with stream');
+        console.log('Adding participant with stream:', {
+          peerId,
+          streamId: event.streams[0].id,
+          tracks: event.streams[0].getTracks().map(t => t.kind)
+        });
         addParticipant(peerId, event.streams[0]);
       }
     };
@@ -42,6 +46,7 @@ export const usePeerConnections = (
       if (['failed', 'closed', 'disconnected'].includes(peerConnection.connectionState)) {
         console.log('Removing participant due to connection state:', peerId);
         removeParticipant(peerId);
+        peerConnections.current.delete(peerId);
       }
     };
 
@@ -51,6 +56,10 @@ export const usePeerConnections = (
         console.log('Attempting to restart ICE');
         peerConnection.restartIce();
       }
+    };
+
+    peerConnection.onnegotiationneeded = async () => {
+      console.log('Negotiation needed for peer:', peerId);
     };
 
     peerConnections.current.set(peerId, peerConnection);

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { usePeerConnections } from './usePeerConnections';
 import { useIceCandidates } from './useIceCandidates';
@@ -18,7 +18,7 @@ export const useWebRTC = (
   
   const { addIceCandidate, processQueuedCandidates } = useIceCandidates();
 
-  const handlePeerJoin = useCallback(async (channel: RealtimeChannel, peerId: string) => {
+  const handlePeerJoin = async (channel: RealtimeChannel, peerId: string) => {
     console.log('Handling peer join:', peerId);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || peerId === user.id) return;
@@ -27,7 +27,10 @@ export const useWebRTC = (
     console.log('Created peer connection for:', peerId);
 
     try {
-      const offer = await peerConnection.createOffer();
+      const offer = await peerConnection.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
       await peerConnection.setLocalDescription(offer);
       console.log('Created and set local offer for:', peerId);
       
@@ -39,9 +42,9 @@ export const useWebRTC = (
     } catch (error) {
       console.error('Error creating offer:', error);
     }
-  }, [createPeerConnection]);
+  };
 
-  const handleOffer = useCallback(async (
+  const handleOffer = async (
     channel: RealtimeChannel,
     peerId: string,
     offer: RTCSessionDescriptionInit
@@ -66,9 +69,9 @@ export const useWebRTC = (
     } catch (error) {
       console.error('Error handling offer:', error);
     }
-  }, [createPeerConnection, processQueuedCandidates]);
+  };
 
-  const handleAnswer = useCallback(async (
+  const handleAnswer = async (
     peerId: string,
     answer: RTCSessionDescriptionInit
   ) => {
@@ -83,7 +86,7 @@ export const useWebRTC = (
         console.error('Error setting remote description:', error);
       }
     }
-  }, [processQueuedCandidates]);
+  };
 
   useEffect(() => {
     if (!localStream) return;
@@ -137,10 +140,9 @@ export const useWebRTC = (
   }, [
     roomId,
     localStream,
-    handlePeerJoin,
-    handleOffer,
-    handleAnswer,
-    addIceCandidate
+    createPeerConnection,
+    addIceCandidate,
+    processQueuedCandidates
   ]);
 
   return peerConnections.current;
