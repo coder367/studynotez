@@ -11,16 +11,13 @@ export const useRoomPresence = (roomId: string, userName: string) => {
       const newMap = new Map(prev);
       const existing = newMap.get(userId);
       
-      // Only update if the participant doesn't exist or if we're adding a stream
-      if (!existing || stream) {
-        newMap.set(userId, {
-          id: userId,
-          stream: stream || existing?.stream,
-          username: userName,
-          isAudioEnabled: true,
-          isVideoEnabled: true
-        });
-      }
+      newMap.set(userId, {
+        id: userId,
+        stream: stream || existing?.stream,
+        username: userName,
+        isAudioEnabled: true,
+        isVideoEnabled: true
+      });
       
       console.log("Updated participants:", Array.from(newMap.entries()));
       return newMap;
@@ -48,13 +45,12 @@ export const useRoomPresence = (roomId: string, userName: string) => {
         const newParticipants = new Map<string, Participant>();
         
         // Add all current participants
-        Object.entries(state).forEach(([key, value]) => {
+        Object.entries(state).forEach(([_, value]) => {
           const presence = value[0] as any;
           if (presence.user_id) {
             const participant = {
               id: presence.user_id,
               username: presence.username,
-              stream: undefined,
               isAudioEnabled: true,
               isVideoEnabled: true
             };
@@ -79,6 +75,7 @@ export const useRoomPresence = (roomId: string, userName: string) => {
 
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
+        console.log('Channel subscribed, tracking presence');
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await channel.track({

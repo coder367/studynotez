@@ -19,15 +19,17 @@ export const useWebRTC = (
   const { addIceCandidate, processQueuedCandidates } = useIceCandidates();
 
   const handlePeerJoin = useCallback(async (channel: RealtimeChannel, peerId: string) => {
+    console.log('Handling peer join:', peerId);
     const { data: { user } } = await supabase.auth.getUser();
-    if (peerId === user?.id) return;
+    if (!user || peerId === user.id) return;
     
-    console.log('New peer joining:', peerId);
     const peerConnection = createPeerConnection(peerId);
+    console.log('Created peer connection for:', peerId);
 
     try {
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
+      console.log('Created and set local offer for:', peerId);
       
       await channel.send({
         type: 'broadcast',
@@ -48,6 +50,7 @@ export const useWebRTC = (
     
     try {
       const peerConnection = createPeerConnection(peerId);
+      console.log('Created peer connection for offer from:', peerId);
 
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
       await processQueuedCandidates(peerId, peerConnection);
@@ -88,15 +91,19 @@ export const useWebRTC = (
     console.log('Setting up WebRTC for room:', roomId);
     const channel = supabase.channel(`room:${roomId}`)
       .on('broadcast', { event: 'peer-join' }, async ({ payload }) => {
+        console.log('Peer join broadcast received:', payload);
         await handlePeerJoin(channel, payload.peerId);
       })
       .on('broadcast', { event: 'offer' }, async ({ payload }) => {
+        console.log('Offer broadcast received:', payload);
         await handleOffer(channel, payload.peerId, payload.offer);
       })
       .on('broadcast', { event: 'answer' }, async ({ payload }) => {
+        console.log('Answer broadcast received:', payload);
         await handleAnswer(payload.peerId, payload.answer);
       })
       .on('broadcast', { event: 'ice-candidate' }, async ({ payload }) => {
+        console.log('ICE candidate broadcast received:', payload);
         const peerConnection = peerConnections.current.get(payload.peerId);
         await addIceCandidate(
           payload.peerId,
@@ -107,6 +114,7 @@ export const useWebRTC = (
 
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
+        console.log('Channel subscribed, announcing presence');
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await channel.send({
