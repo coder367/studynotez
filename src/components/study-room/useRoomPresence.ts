@@ -11,23 +11,15 @@ export const useRoomPresence = (roomId: string, userName: string) => {
       const newMap = new Map(prev);
       const existing = newMap.get(userId);
       
-      // Don't override existing stream if no new stream is provided
-      if (existing?.stream && !stream) {
-        newMap.set(userId, {
-          ...existing,
-          id: userId,
-          username: userName
-        });
-      } else {
-        // If there's a new stream or no existing entry, set the new data
-        newMap.set(userId, {
-          id: userId,
-          stream: stream || existing?.stream,
-          username: userName
-        });
-      }
+      newMap.set(userId, {
+        id: userId,
+        stream: stream || existing?.stream,
+        username: userName,
+        isAudioEnabled: true,
+        isVideoEnabled: true
+      });
       
-      console.log("Updated participants:", newMap.size);
+      console.log("Updated participants:", Array.from(newMap.entries()));
       return newMap;
     });
   }, [userName]);
@@ -37,7 +29,7 @@ export const useRoomPresence = (roomId: string, userName: string) => {
     setParticipants(prev => {
       const newMap = new Map(prev);
       newMap.delete(userId);
-      console.log("Updated participants after removal:", newMap.size);
+      console.log("Updated participants after removal:", Array.from(newMap.entries()));
       return newMap;
     });
   }, []);
@@ -59,7 +51,9 @@ export const useRoomPresence = (roomId: string, userName: string) => {
             const participant = {
               id: presence.user_id,
               username: presence.username,
-              stream: undefined
+              stream: undefined,
+              isAudioEnabled: true,
+              isVideoEnabled: true
             };
             newParticipants.set(presence.user_id, participant);
           }
@@ -93,19 +87,20 @@ export const useRoomPresence = (roomId: string, userName: string) => {
             removeParticipant(presence.user_id);
           }
         });
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await channel.track({
-              user_id: user.id,
-              username: userName,
-              online_at: new Date().toISOString(),
-            });
-          }
-        }
       });
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await channel.track({
+            user_id: user.id,
+            username: userName,
+            online_at: new Date().toISOString(),
+          });
+        }
+      }
+    });
 
     return () => {
       console.log("Cleaning up room presence");
