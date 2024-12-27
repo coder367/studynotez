@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -8,38 +10,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import NotificationItem from "./NotificationItem";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { Database } from "@/integrations/supabase/types";
 import NotificationBadge from "./NotificationBadge";
-
-type DatabaseNotification = Database["public"]["Tables"]["notifications"]["Row"];
-
-interface MessageData {
-  sender_name: string;
-  message: string;
-  sender_id: string;
-}
-
-interface MessageNotification {
-  id: string;
-  type: "new_message";
-  user_id: string;
-  data: MessageData;
-  created_at: string;
-  read_at: string | null;
-}
-
-interface NotificationItemType {
-  id: string;
-  type: string;
-  data: any;
-  created_at: string;
-  read_at: string | null;
-}
+import { NotificationType, isMessageNotification } from "@/types/notifications";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,7 +51,7 @@ const NotificationsMenu = () => {
       if (notificationsData.error) throw notificationsData.error;
       if (messagesData.error) throw messagesData.error;
 
-      const messageNotifications: MessageNotification[] = messagesData.data.map(message => ({
+      const messageNotifications = messagesData.data.map(message => ({
         id: `message-${message.id}`,
         type: "new_message",
         user_id: message.receiver_id!,
@@ -94,18 +68,17 @@ const NotificationsMenu = () => {
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 10000,
   });
 
-  const handleNotificationClick = async (notification: NotificationItemType) => {
+  const handleNotificationClick = async (notification: NotificationType) => {
     try {
       if (notification.type === "new_message" && 
           typeof notification.data === 'object' && 
           notification.data !== null && 
           'sender_id' in notification.data) {
         
-        // Mark message as read
-        if (notification.id.startsWith('message-')) {
+        if (isMessageNotification(notification) && notification.id.startsWith('message-')) {
           const messageId = notification.id.replace('message-', '');
           await supabase
             .from("messages")
@@ -134,14 +107,12 @@ const NotificationsMenu = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Mark all notifications as read
       await supabase
         .from("notifications")
         .update({ read: true })
         .eq("user_id", user.id)
         .eq("read", false);
 
-      // Mark all messages as read
       await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })

@@ -1,16 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { NotificationType } from "@/types/notifications";
 import { cn } from "@/lib/utils";
 
 interface NotificationItemProps {
-  notification: {
-    id: string;
-    type: string;
-    data: any;
-    created_at: string;
-    read_at: string | null;
-  };
-  onNotificationClick: (notification: any) => void;
+  notification: NotificationType;
+  onNotificationClick: (notification: NotificationType) => void;
   isExiting?: boolean;
 }
 
