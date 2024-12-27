@@ -36,15 +36,15 @@ export const VideoGrid = ({
     participantIds: Array.from(participants.keys())
   });
   
-  // Filter out the current user from remote participants
-  const remoteParticipants = Array.from(participants.values())
-    .filter(p => p.id !== currentUserId && p.stream); // Only include participants with streams
+  // Get all participants including local user
+  const allParticipants = Array.from(participants.values());
   
-  const totalParticipants = remoteParticipants.length + (localStream ? 1 : 0);
+  // Calculate grid layout
+  const totalParticipants = allParticipants.length + (localStream ? 1 : 0);
   
   console.log("Participants breakdown:", {
     total: totalParticipants,
-    remote: remoteParticipants.length,
+    remote: allParticipants.length,
     hasLocalStream: !!localStream
   });
 
@@ -79,16 +79,18 @@ export const VideoGrid = ({
       )}
       
       {/* Render remote participants */}
-      {remoteParticipants.map((participant) => (
-        <div key={participant.id} className="relative aspect-video">
-          <ParticipantVideo
-            participant={participant}
-            userName={participant.username}
-            audioLevel={0}
-            isAudioEnabled={participant.isAudioEnabled}
-          />
-        </div>
-      ))}
+      {allParticipants
+        .filter(p => p.id !== currentUserId) // Filter out local user from remote participants
+        .map((participant) => (
+          <div key={participant.id} className="relative aspect-video">
+            <ParticipantVideo
+              participant={participant}
+              userName={participant.username}
+              audioLevel={0}
+              isAudioEnabled={participant.isAudioEnabled}
+            />
+          </div>
+        ))}
     </div>
   );
 };

@@ -90,24 +90,40 @@ const NotificationsMenu = () => {
         read_at: message.read_at
       }));
 
-      const formattedNotifications: NotificationItemType[] = notificationsData.data.map(notification => ({
-        ...notification,
-        read_at: notification.read ? new Date().toISOString() : null
-      }));
-
-      return [...formattedNotifications, ...messageNotifications].sort(
+      return [...notificationsData.data, ...messageNotifications].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   const handleNotificationClick = async (notification: NotificationItemType) => {
-    if (notification.type === "new_message" && 
-        typeof notification.data === 'object' && 
-        notification.data !== null && 
-        'sender_id' in notification.data) {
-      navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
-      setIsOpen(false);
+    try {
+      if (notification.type === "new_message" && 
+          typeof notification.data === 'object' && 
+          notification.data !== null && 
+          'sender_id' in notification.data) {
+        
+        // Mark message as read
+        if (notification.id.startsWith('message-')) {
+          const messageId = notification.id.replace('message-', '');
+          await supabase
+            .from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .eq("id", messageId);
+        }
+        
+        navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
+        setIsOpen(false);
+        await refetchNotifications();
+      }
+    } catch (error: any) {
+      console.error("Error handling notification click:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process notification",
+        variant: "destructive",
+      });
     }
   };
 
@@ -115,33 +131,31 @@ const NotificationsMenu = () => {
     try {
       setExitingNotifications(notifications.map(n => n.id));
       
-      setTimeout(async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-        // Mark all notifications as read
-        await supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("user_id", user.id)
-          .is("read", false);
+      // Mark all notifications as read
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .eq("read", false);
 
-        // Mark all messages as read
-        await supabase
-          .from("messages")
-          .update({ read_at: new Date().toISOString() })
-          .eq("receiver_id", user.id)
-          .is("read_at", null);
+      // Mark all messages as read
+      await supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("receiver_id", user.id)
+        .is("read_at", null);
 
-        await refetchNotifications();
-        setExitingNotifications([]);
-        setIsOpen(false);
-        
-        toast({
-          title: "Success",
-          description: "All notifications marked as read",
-        });
-      }, 500); // Wait for animation to complete
+      await refetchNotifications();
+      setExitingNotifications([]);
+      setIsOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
     } catch (error: any) {
       console.error("Error marking notifications as read:", error);
       toast({

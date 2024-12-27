@@ -11,15 +11,18 @@ export const useRoomPresence = (roomId: string, userName: string) => {
       const newMap = new Map(prev);
       const existing = newMap.get(userId);
       
-      newMap.set(userId, {
-        id: userId,
-        stream: stream || existing?.stream,
-        username: userName,
-        isAudioEnabled: true,
-        isVideoEnabled: true
-      });
-      
-      console.log("Updated participants:", Array.from(newMap.entries()));
+      // Only update if the participant doesn't exist or if adding a stream
+      if (!existing || stream) {
+        newMap.set(userId, {
+          id: userId,
+          stream: stream || existing?.stream,
+          username: userName,
+          isAudioEnabled: true,
+          isVideoEnabled: true
+        });
+        
+        console.log("Updated participants:", Array.from(newMap.entries()));
+      }
       return newMap;
     });
   }, [userName]);
