@@ -16,13 +16,17 @@ interface ParticipantsListProps {
 }
 
 const ParticipantsList = ({ participants, currentUserId }: ParticipantsListProps) => {
+  const uniqueParticipants = participants.filter((participant, index, self) =>
+    index === self.findIndex((p) => p.id === participant.id)
+  );
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Participants ({participants.length})
+        Participants ({uniqueParticipants.length})
       </h2>
       <div className="space-y-2">
-        {participants.map((participant) => (
+        {uniqueParticipants.map((participant) => (
           <div
             key={participant.id}
             className="flex items-center justify-between p-2 rounded-lg bg-muted/50"

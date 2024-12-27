@@ -39,7 +39,7 @@ export const useRoomPresence = (roomId: string, userName: string) => {
     const channel = supabase.channel(`room:${roomId}`)
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        console.log('Presence state updated:', state);
+        console.log('Presence state synced:', state);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         console.log('Presence join:', key, newPresences);

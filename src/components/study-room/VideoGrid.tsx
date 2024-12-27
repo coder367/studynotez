@@ -38,7 +38,7 @@ export const VideoGrid = ({
   
   // Get all participants excluding local user
   const remoteParticipants = Array.from(participants.values())
-    .filter(p => p.id !== currentUserId);
+    .filter(p => p.id !== currentUserId && p.stream); // Only include participants with streams
   
   // Calculate grid layout
   const totalParticipants = remoteParticipants.length + (localStream ? 1 : 0);
