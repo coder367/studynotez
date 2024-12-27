@@ -1,7 +1,9 @@
 import { useRef, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { getRTCConfiguration } from './useWebRTCConfig';
 
 export const usePeerConnections = (
+  roomId: string,
   localStream: MediaStream | null,
   addParticipant: (id: string, stream: MediaStream) => void,
   removeParticipant: (id: string) => void
@@ -81,7 +83,7 @@ export const usePeerConnections = (
 
     peerConnections.current.set(peerId, peerConnection);
     return peerConnection;
-  }, [localStream, addParticipant, removeParticipant]);
+  }, [localStream, addParticipant, removeParticipant, roomId]);
 
   return {
     peerConnections,
