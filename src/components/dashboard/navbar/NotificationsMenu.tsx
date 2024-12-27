@@ -59,7 +59,7 @@ const NotificationsMenu = () => {
           .from("notifications")
           .select("*")
           .eq("user_id", user.id)
-          .is("read", false)
+          .eq("read", false)
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
