@@ -11,6 +11,7 @@ export const useWebRTC = (
   removeParticipant: (id: string) => void
 ) => {
   const { peerConnections, createPeerConnection } = usePeerConnections(
+    roomId,
     localStream,
     addParticipant,
     removeParticipant
