@@ -14,6 +14,7 @@ import NotificationItem from "./NotificationItem";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import NotificationBadge from "./NotificationBadge";
 
 type DatabaseNotification = Database["public"]["Tables"]["notifications"]["Row"];
 
@@ -134,6 +135,7 @@ const NotificationsMenu = () => {
 
         await refetchNotifications();
         setExitingNotifications([]);
+        setIsOpen(false);
         
         toast({
           title: "Success",
@@ -152,14 +154,10 @@ const NotificationsMenu = () => {
 
   return (
     <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(true)}
-        className="relative"
-      >
-        <Bell className="h-5 w-5" />
-      </Button>
+      <NotificationBadge 
+        unreadCount={notifications.length} 
+        onClick={() => setIsOpen(true)} 
+      />
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl">
@@ -186,7 +184,7 @@ const NotificationsMenu = () => {
               ))
             ) : (
               <div className="col-span-2 text-center text-muted-foreground py-8">
-                No notifications
+                No new notifications
               </div>
             )}
           </div>
