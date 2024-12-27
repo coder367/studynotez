@@ -26,16 +26,10 @@ export const useWebRTC = (
       return;
     }
     
-    // Check if we already have a connection for this peer
-    if (peerConnections.current.has(peerId)) {
-      console.log('Connection already exists for peer:', peerId);
-      return;
-    }
-    
-    const peerConnection = createPeerConnection(peerId);
-    console.log('Created peer connection for:', peerId);
-
     try {
+      const peerConnection = createPeerConnection(peerId);
+      console.log('Created peer connection for:', peerId);
+
       const offer = await peerConnection.createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
@@ -46,7 +40,7 @@ export const useWebRTC = (
       await channel.send({
         type: 'broadcast',
         event: 'offer',
-        payload: { peerId, offer }
+        payload: { peerId: user.id, offer }
       });
     } catch (error) {
       console.error('Error creating offer:', error);
@@ -61,7 +55,6 @@ export const useWebRTC = (
     console.log('Received offer from:', peerId);
     
     try {
-      // Check if we already have a connection
       let peerConnection = peerConnections.current.get(peerId);
       if (!peerConnection) {
         peerConnection = createPeerConnection(peerId);
@@ -74,10 +67,13 @@ export const useWebRTC = (
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       await channel.send({
         type: 'broadcast',
         event: 'answer',
-        payload: { peerId, answer }
+        payload: { peerId: user.id, answer }
       });
     } catch (error) {
       console.error('Error handling offer:', error);

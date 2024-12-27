@@ -32,26 +32,33 @@ export const usePeerConnections = (
       });
     }
 
-    let remoteStream: MediaStream | null = null;
-
     peerConnection.ontrack = (event) => {
       console.log('Received remote track:', event.track.kind);
       if (event.streams?.[0]) {
-        if (!remoteStream) {
-          remoteStream = event.streams[0];
-          console.log('Adding participant with stream:', {
-            peerId,
-            streamId: remoteStream.id,
-            tracks: remoteStream.getTracks().map(t => t.kind)
-          });
-          addParticipant(peerId, remoteStream);
-        }
+        console.log('Adding participant with stream:', {
+          peerId,
+          streamId: event.streams[0].id,
+          tracks: event.streams[0].getTracks().map(t => t.kind)
+        });
+        addParticipant(peerId, event.streams[0]);
       }
     };
 
-    peerConnection.onicecandidate = (event) => {
+    peerConnection.onicecandidate = async (event) => {
       if (event.candidate) {
         console.log('New ICE candidate:', event.candidate.type);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const channel = supabase.channel(`room:${roomId}`);
+        await channel.send({
+          type: 'broadcast',
+          event: 'ice-candidate',
+          payload: {
+            peerId: user.id,
+            candidate: event.candidate
+          }
+        });
       }
     };
 
@@ -70,10 +77,6 @@ export const usePeerConnections = (
         console.log('Attempting to restart ICE');
         peerConnection.restartIce();
       }
-    };
-
-    peerConnection.onnegotiationneeded = async () => {
-      console.log('Negotiation needed for peer:', peerId);
     };
 
     peerConnections.current.set(peerId, peerConnection);
