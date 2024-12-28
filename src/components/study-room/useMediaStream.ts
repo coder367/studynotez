@@ -113,11 +113,12 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   }, [stream]);
 
   useEffect(() => {
-    const cleanup = initializeMedia();
-    return () => {
-      cleanup?.();
-      stopAllTracks();
-    };
+    initializeMedia().then(cleanup => {
+      return () => {
+        cleanup?.();
+        stopAllTracks();
+      };
+    });
   }, [initializeMedia, stopAllTracks]);
 
   return {
