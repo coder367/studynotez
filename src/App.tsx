@@ -15,27 +15,29 @@ import StudyRoomView from "./pages/StudyRoomView";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/notes" element={<Notes />} />
-          <Route path="/dashboard/chat" element={<Chat />} />
-          <Route path="/dashboard/profile" element={<Profile />} />
-          <Route path="/dashboard/profile/:userId" element={<Profile />} />
-          <Route path="/dashboard/study-room" element={<StudyRoom />} />
-          <Route path="/dashboard/study-room/:id" element={<StudyRoomView />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/notes" element={<Notes />} />
+            <Route path="/dashboard/chat" element={<Chat />} />
+            <Route path="/dashboard/profile" element={<Profile />} />
+            <Route path="/dashboard/profile/:userId" element={<Profile />} />
+            <Route path="/dashboard/study-room" element={<StudyRoom />} />
+            <Route path="/dashboard/study-room/:id" element={<StudyRoomView />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
