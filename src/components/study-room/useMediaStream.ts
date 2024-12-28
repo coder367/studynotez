@@ -9,21 +9,40 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
 
   const initializeMedia = useCallback(async () => {
     try {
-      if (stream) return;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
 
       console.log("Requesting media permissions...");
       const constraints = {
-        audio: true, // Always request audio
-        video: !isVoiceOnly,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: !isVoiceOnly ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
+        } : false,
       };
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log("Media stream obtained:", newStream.getTracks().map(t => t.kind));
+      console.log("Media stream obtained:", newStream.getTracks().map(t => ({
+        kind: t.kind,
+        label: t.label,
+        enabled: t.enabled
+      })));
+
       setStream(newStream);
       setIsAudioEnabled(true);
       setIsVideoEnabled(!isVoiceOnly);
 
-      // Set up audio level monitoring
+      // Set up audio level monitoring with proper cleanup
+      if (audioContext) {
+        audioContext.close();
+      }
+      
       const context = new AudioContext();
       const source = context.createMediaStreamSource(newStream);
       const analyser = context.createAnalyser();
@@ -32,14 +51,23 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       setAudioContext(context);
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      let animationFrame: number;
+
       const updateAudioLevel = () => {
         if (context.state === 'closed') return;
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
         setAudioLevel((average / 255) * 100);
-        requestAnimationFrame(updateAudioLevel);
+        animationFrame = requestAnimationFrame(updateAudioLevel);
       };
+      
       updateAudioLevel();
+
+      return () => {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+        }
+      };
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
@@ -83,6 +111,14 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       }
     }
   }, [stream]);
+
+  useEffect(() => {
+    const cleanup = initializeMedia();
+    return () => {
+      cleanup?.();
+      stopAllTracks();
+    };
+  }, [initializeMedia, stopAllTracks]);
 
   return {
     localStream: stream,
