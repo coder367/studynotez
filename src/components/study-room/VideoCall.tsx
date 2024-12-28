@@ -13,7 +13,6 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userName, setUserName] = useState<string>("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   const { 
     localStream,
@@ -27,57 +26,36 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   } = useMediaStream(isVoiceOnly);
   
   const { participants, addParticipant, removeParticipant } = useRoomPresence(roomId, userName);
-  const webrtc = useWebRTC(roomId, localStream, addParticipant, removeParticipant);
+  
+  // Initialize WebRTC with all required parameters
+  useWebRTC(roomId, localStream, addParticipant, removeParticipant);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to join the room",
-            variant: "destructive",
-          });
-          navigate("/auth");
-          return;
-        }
-        setIsAuthenticated(true);
+    console.log("Initializing media stream");
+    initializeMedia();
+    return () => {
+      console.log("Cleaning up media stream");
+      stopAllTracks();
+    };
+  }, [isVoiceOnly, initializeMedia, stopAllTracks]);
 
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name")
           .eq("id", user.id)
           .single();
-
         if (profile) {
           setUserName(profile.full_name || "Anonymous");
         }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        toast({
-          title: "Error",
-          description: "Failed to verify authentication",
-          variant: "destructive",
-        });
-        navigate("/auth");
       }
     };
 
-    checkAuth();
-  }, [navigate, toast]);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    console.log("Initializing media stream");
-    initializeMedia();
-    
-    return () => {
-      console.log("Cleaning up media stream");
-      stopAllTracks();
-    };
-  }, [isAuthenticated, initializeMedia, stopAllTracks]);
+    fetchUserName();
+  }, []);
 
   const handleLeaveCall = async () => {
     try {
@@ -99,8 +77,6 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
       });
     }
   };
-
-  if (!isAuthenticated) return null;
 
   return (
     <div className="flex flex-col gap-4">

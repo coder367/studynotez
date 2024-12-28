@@ -1,7 +1,6 @@
 import { ParticipantVideoProps } from "@/types/video-call";
 import { Progress } from "@/components/ui/progress";
 import { Mic, MicOff, Video, VideoOff } from "lucide-react";
-import { useEffect, useRef } from "react";
 
 export const ParticipantVideo = ({ 
   participant, 
@@ -10,35 +9,23 @@ export const ParticipantVideo = ({
   audioLevel, 
   isAudioEnabled 
 }: ParticipantVideoProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current && participant.stream) {
-      videoRef.current.srcObject = participant.stream;
-      const playVideo = async () => {
-        try {
-          await videoRef.current?.play();
-        } catch (error) {
-          console.error("Error playing video:", error);
-        }
-      };
-      playVideo();
-    }
-  }, [participant.stream]);
-
   console.log("Rendering participant video:", {
     id: participant.id,
     isLocal,
     hasStream: !!participant.stream,
-    audioLevel,
-    isAudioEnabled
+    audioLevel
   });
 
   return (
     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
       {participant.stream ? (
         <video
-          ref={videoRef}
+          ref={(el) => {
+            if (el && participant.stream) {
+              el.srcObject = participant.stream;
+              el.play().catch(e => console.error("Error playing video:", e));
+            }
+          }}
           autoPlay
           playsInline
           muted={isLocal}
@@ -63,15 +50,6 @@ export const ParticipantVideo = ({
                 <Mic className="h-4 w-4 text-white" />
               ) : (
                 <MicOff className="h-4 w-4 text-white" />
-              )}
-            </div>
-          )}
-          {participant.isVideoEnabled !== undefined && (
-            <div className="bg-black/50 p-1 rounded">
-              {participant.isVideoEnabled ? (
-                <Video className="h-4 w-4 text-white" />
-              ) : (
-                <VideoOff className="h-4 w-4 text-white" />
               )}
             </div>
           )}

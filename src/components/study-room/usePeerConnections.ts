@@ -24,10 +24,6 @@ export const usePeerConnections = (
     
     const peerConnection = new RTCPeerConnection(getRTCConfiguration());
 
-    // Add transceivers for each track type
-    peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
-    peerConnection.addTransceiver('video', { direction: 'sendrecv' });
-
     if (localStream) {
       console.log('Adding local tracks to peer connection');
       localStream.getTracks().forEach(track => {
@@ -82,28 +78,6 @@ export const usePeerConnections = (
       if (peerConnection.iceConnectionState === 'failed') {
         console.log('Attempting to restart ICE');
         peerConnection.restartIce();
-      }
-    };
-
-    peerConnection.onnegotiationneeded = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        const channel = supabase.channel(`room:${roomId}`);
-        await channel.send({
-          type: 'broadcast',
-          event: 'offer',
-          payload: {
-            peerId: user.id,
-            offer: peerConnection.localDescription
-          }
-        });
-      } catch (error) {
-        console.error('Error during negotiation:', error);
       }
     };
 
