@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -6,14 +6,15 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const initializeMedia = useCallback(async () => {
     try {
-      if (stream) {
+      if (streamRef.current) {
         console.log("Cleaning up existing stream");
-        stream.getTracks().forEach(track => {
+        streamRef.current.getTracks().forEach(track => {
           track.stop();
-          stream.removeTrack(track);
+          streamRef.current?.removeTrack(track);
         });
       }
 
@@ -24,7 +25,8 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
           noiseSuppression: true,
           autoGainControl: true,
           sampleRate: 48000,
-          channelCount: 1
+          channelCount: 1,
+          latency: 0
         },
         video: !isVoiceOnly ? {
           width: { ideal: 1280, max: 1920 },
@@ -43,19 +45,40 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         muted: t.muted
       })));
 
-      // Ensure tracks are properly initialized
+      // Set up track event listeners
       newStream.getTracks().forEach(track => {
         track.enabled = true;
+        
         track.addEventListener('ended', () => {
           console.log(`Track ${track.id} ended`);
+          if (track.kind === 'video' && !isVoiceOnly) {
+            setIsVideoEnabled(false);
+          } else if (track.kind === 'audio') {
+            setIsAudioEnabled(false);
+          }
+        });
+
+        track.addEventListener('mute', () => {
+          console.log(`Track ${track.id} muted`);
+          if (track.kind === 'audio') {
+            setIsAudioEnabled(false);
+          }
+        });
+
+        track.addEventListener('unmute', () => {
+          console.log(`Track ${track.id} unmuted`);
+          if (track.kind === 'audio') {
+            setIsAudioEnabled(true);
+          }
         });
       });
 
+      streamRef.current = newStream;
       setStream(newStream);
       setIsAudioEnabled(true);
       setIsVideoEnabled(!isVoiceOnly);
 
-      // Set up audio level monitoring with proper cleanup
+      // Set up audio level monitoring
       if (newStream.getAudioTracks().length > 0) {
         const context = new AudioContext();
         const source = context.createMediaStreamSource(newStream);
@@ -87,16 +110,16 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       }
     } catch (error) {
       console.error("Error accessing media devices:", error);
-      throw error; // Propagate error for proper handling
+      throw error;
     }
-  }, [isVoiceOnly, stream]);
+  }, [isVoiceOnly]);
 
   const stopAllTracks = useCallback(() => {
     console.log("Stopping all media tracks");
-    if (stream) {
-      stream.getTracks().forEach(track => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
         track.stop();
-        stream.removeTrack(track);
+        streamRef.current?.removeTrack(track);
       });
       setStream(null);
       setIsAudioEnabled(false);
@@ -108,11 +131,11 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         setAudioContext(null);
       }
     }
-  }, [stream, audioContext]);
+  }, [audioContext]);
 
   const toggleAudio = useCallback(() => {
-    if (stream) {
-      const audioTrack = stream.getAudioTracks()[0];
+    if (streamRef.current) {
+      const audioTrack = streamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
@@ -123,11 +146,11 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         });
       }
     }
-  }, [stream]);
+  }, []);
 
   const toggleVideo = useCallback(() => {
-    if (stream) {
-      const videoTrack = stream.getVideoTracks()[0];
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
@@ -138,9 +161,8 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         });
       }
     }
-  }, [stream]);
+  }, []);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       stopAllTracks();

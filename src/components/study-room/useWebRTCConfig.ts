@@ -13,11 +13,14 @@ export const getRTCConfiguration = (): RTCConfiguration => ({
       username: 'openrelayproject',
       credential: 'openrelayproject',
     },
+    {
+      urls: ['turn:openrelay.metered.ca:443'],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
   iceCandidatePoolSize: 10,
   bundlePolicy: 'max-bundle',
   rtcpMuxPolicy: 'require',
-  iceTransportPolicy: 'all',
-  sdpSemantics: 'unified-plan',
-  encodedInsertableStreams: false
+  iceTransportPolicy: 'all'
 });
