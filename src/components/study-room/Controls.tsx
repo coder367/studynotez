@@ -19,7 +19,11 @@ export const Controls = ({
           onClick={onToggleAudio}
           className={!isAudioEnabled ? "bg-destructive hover:bg-destructive" : ""}
         >
-          {isAudioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+          {isAudioEnabled ? (
+            <Mic className="h-4 w-4" />
+          ) : (
+            <MicOff className="h-4 w-4" />
+          )}
         </Button>
       )}
       <Button
@@ -28,7 +32,11 @@ export const Controls = ({
         onClick={onToggleVideo}
         className={!isVideoEnabled ? "bg-destructive hover:bg-destructive" : ""}
       >
-        {isVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+        {isVideoEnabled ? (
+          <Video className="h-4 w-4" />
+        ) : (
+          <VideoOff className="h-4 w-4" />
+        )}
       </Button>
       <Button variant="destructive" size="icon" onClick={onLeaveCall}>
         <UserMinus className="h-4 w-4" />

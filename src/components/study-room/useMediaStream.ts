@@ -6,6 +6,8 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [audioTrack, setAudioTrack] = useState<MediaStreamTrack | null>(null);
+  const [videoTrack, setVideoTrack] = useState<MediaStreamTrack | null>(null);
 
   const initializeMedia = useCallback(async () => {
     try {
@@ -34,11 +36,17 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         enabled: t.enabled
       })));
 
+      // Store individual tracks
+      const newAudioTrack = newStream.getAudioTracks()[0];
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      
+      setAudioTrack(newAudioTrack);
+      setVideoTrack(newVideoTrack);
       setStream(newStream);
       setIsAudioEnabled(true);
       setIsVideoEnabled(!isVoiceOnly);
 
-      // Set up audio level monitoring with proper cleanup
+      // Set up audio level monitoring
       if (audioContext) {
         audioContext.close();
       }
@@ -71,7 +79,7 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
-  }, [isVoiceOnly, stream]);
+  }, [isVoiceOnly, stream, audioContext]);
 
   const stopAllTracks = useCallback(() => {
     console.log("Stopping all media tracks");
@@ -80,6 +88,8 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         track.stop();
       });
       setStream(null);
+      setAudioTrack(null);
+      setVideoTrack(null);
       setIsAudioEnabled(false);
       setIsVideoEnabled(false);
       setAudioLevel(0);
@@ -91,26 +101,20 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   }, [stream, audioContext]);
 
   const toggleAudio = useCallback(() => {
-    if (stream) {
-      const audioTrack = stream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsAudioEnabled(audioTrack.enabled);
-        console.log("Audio track toggled:", audioTrack.enabled);
-      }
+    if (audioTrack) {
+      audioTrack.enabled = !audioTrack.enabled;
+      setIsAudioEnabled(audioTrack.enabled);
+      console.log("Audio track toggled:", audioTrack.enabled);
     }
-  }, [stream]);
+  }, [audioTrack]);
 
   const toggleVideo = useCallback(() => {
-    if (stream) {
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoEnabled(videoTrack.enabled);
-        console.log("Video track toggled:", videoTrack.enabled);
-      }
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
+      setIsVideoEnabled(videoTrack.enabled);
+      console.log("Video track toggled:", videoTrack.enabled);
     }
-  }, [stream]);
+  }, [videoTrack]);
 
   useEffect(() => {
     initializeMedia().then(cleanup => {

@@ -13,7 +13,8 @@ export const ParticipantVideo = ({
     id: participant.id,
     isLocal,
     hasStream: !!participant.stream,
-    audioLevel
+    audioLevel,
+    isAudioEnabled
   });
 
   return (
@@ -50,6 +51,15 @@ export const ParticipantVideo = ({
                 <Mic className="h-4 w-4 text-white" />
               ) : (
                 <MicOff className="h-4 w-4 text-white" />
+              )}
+            </div>
+          )}
+          {participant.isVideoEnabled !== undefined && (
+            <div className="bg-black/50 p-1 rounded">
+              {participant.isVideoEnabled ? (
+                <Video className="h-4 w-4 text-white" />
+              ) : (
+                <VideoOff className="h-4 w-4 text-white" />
               )}
             </div>
           )}
