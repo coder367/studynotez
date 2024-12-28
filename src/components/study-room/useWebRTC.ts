@@ -35,7 +35,7 @@ export const useWebRTC = (
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
       });
-      await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+      await peerConnection.setLocalDescription(offer);
       console.log('Created and set local offer for:', peerId);
       
       await channel.send({
