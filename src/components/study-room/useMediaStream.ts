@@ -9,37 +9,60 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
 
   const initializeMedia = useCallback(async () => {
     try {
-      if (stream) return;
+      if (stream) {
+        // Clean up existing stream before creating a new one
+        stream.getTracks().forEach(track => track.stop());
+      }
 
       console.log("Requesting media permissions...");
       const constraints = {
-        audio: true, // Always request audio
-        video: !isVoiceOnly,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: !isVoiceOnly ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
+        } : false
       };
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log("Media stream obtained:", newStream.getTracks().map(t => t.kind));
+      console.log("Media stream obtained:", newStream.getTracks().map(t => ({
+        kind: t.kind,
+        enabled: t.enabled,
+        id: t.id
+      })));
+
+      // Ensure tracks are enabled by default
+      newStream.getTracks().forEach(track => {
+        track.enabled = true;
+      });
+
       setStream(newStream);
       setIsAudioEnabled(true);
       setIsVideoEnabled(!isVoiceOnly);
 
       // Set up audio level monitoring
-      const context = new AudioContext();
-      const source = context.createMediaStreamSource(newStream);
-      const analyser = context.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      setAudioContext(context);
+      if (newStream.getAudioTracks().length > 0) {
+        const context = new AudioContext();
+        const source = context.createMediaStreamSource(newStream);
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        setAudioContext(context);
 
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      const updateAudioLevel = () => {
-        if (context.state === 'closed') return;
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        setAudioLevel((average / 255) * 100);
-        requestAnimationFrame(updateAudioLevel);
-      };
-      updateAudioLevel();
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const updateAudioLevel = () => {
+          if (context.state === 'closed') return;
+          analyser.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          setAudioLevel((average / 255) * 100);
+          requestAnimationFrame(updateAudioLevel);
+        };
+        updateAudioLevel();
+      }
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
@@ -83,6 +106,13 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       }
     }
   }, [stream]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      stopAllTracks();
+    };
+  }, [stopAllTracks]);
 
   return {
     localStream: stream,
