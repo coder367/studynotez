@@ -73,16 +73,16 @@ export const useRoomPresence = (roomId: string, userName: string) => {
 
         channelRef.current = channel;
 
-        const status = await channel.subscribe();
-        console.log("Channel subscription status:", status);
-
-        if (status === 'SUBSCRIBED' && mounted.current) {
-          await channel.track({
-            user_id: user.id,
-            username: userName,
-            online_at: new Date().toISOString(),
-          });
-        }
+        const status = await channel.subscribe((status: string) => {
+          console.log("Channel subscription status:", status);
+          if (status === 'SUBSCRIBED' && mounted.current) {
+            channel.track({
+              user_id: user.id,
+              username: userName,
+              online_at: new Date().toISOString(),
+            });
+          }
+        });
       } catch (error) {
         console.error("Error setting up presence:", error);
       }
