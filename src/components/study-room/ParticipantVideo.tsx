@@ -1,6 +1,7 @@
 import { ParticipantVideoProps } from "@/types/video-call";
 import { Progress } from "@/components/ui/progress";
-import { Mic, MicOff, Video, VideoOff } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 export const ParticipantVideo = ({ 
   participant, 
@@ -9,6 +10,31 @@ export const ParticipantVideo = ({
   audioLevel, 
   isAudioEnabled 
 }: ParticipantVideoProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement && participant.stream) {
+      videoElement.srcObject = participant.stream;
+      
+      const playVideo = async () => {
+        try {
+          await videoElement.play();
+        } catch (error) {
+          console.error("Error playing video:", error);
+        }
+      };
+
+      playVideo();
+
+      return () => {
+        if (videoElement.srcObject) {
+          videoElement.srcObject = null;
+        }
+      };
+    }
+  }, [participant.stream]);
+
   console.log("Rendering participant video:", {
     id: participant.id,
     isLocal,
@@ -20,12 +46,7 @@ export const ParticipantVideo = ({
     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
       {participant.stream ? (
         <video
-          ref={(el) => {
-            if (el && participant.stream) {
-              el.srcObject = participant.stream;
-              el.play().catch(e => console.error("Error playing video:", e));
-            }
-          }}
+          ref={videoRef}
           autoPlay
           playsInline
           muted={isLocal}

@@ -1,45 +1,65 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number>();
 
   const initializeMedia = useCallback(async () => {
     try {
-      if (stream) return;
+      if (stream) {
+        console.log("Stream already exists, skipping initialization");
+        return;
+      }
 
       console.log("Requesting media permissions...");
       const constraints = {
-        audio: true, // Always request audio
-        video: !isVoiceOnly,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: !isVoiceOnly ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
+        } : false,
       };
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log("Media stream obtained:", newStream.getTracks().map(t => t.kind));
+      console.log("Media stream obtained:", newStream.getTracks().map(t => ({
+        kind: t.kind,
+        enabled: t.enabled,
+        id: t.id
+      })));
+
+      // Initialize audio context only if audio is enabled
+      if (!audioContextRef.current && newStream.getAudioTracks().length > 0) {
+        audioContextRef.current = new AudioContext();
+        const source = audioContextRef.current.createMediaStreamSource(newStream);
+        const analyser = audioContextRef.current.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const updateAudioLevel = () => {
+          if (audioContextRef.current?.state === 'closed') return;
+          
+          analyser.getByteFrequencyData(dataArray);
+          const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+          setAudioLevel((average / 255) * 100);
+          
+          animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+        };
+        updateAudioLevel();
+      }
+
       setStream(newStream);
       setIsAudioEnabled(true);
       setIsVideoEnabled(!isVoiceOnly);
-
-      // Set up audio level monitoring
-      const context = new AudioContext();
-      const source = context.createMediaStreamSource(newStream);
-      const analyser = context.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      setAudioContext(context);
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      const updateAudioLevel = () => {
-        if (context.state === 'closed') return;
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        setAudioLevel((average / 255) * 100);
-        requestAnimationFrame(updateAudioLevel);
-      };
-      updateAudioLevel();
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
@@ -50,17 +70,24 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
     if (stream) {
       stream.getTracks().forEach(track => {
         track.stop();
+        console.log(`Stopped ${track.kind} track:`, track.id);
       });
       setStream(null);
-      setIsAudioEnabled(false);
-      setIsVideoEnabled(false);
-      setAudioLevel(0);
-      if (audioContext) {
-        audioContext.close();
-        setAudioContext(null);
-      }
     }
-  }, [stream, audioContext]);
+    
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    setIsAudioEnabled(false);
+    setIsVideoEnabled(false);
+    setAudioLevel(0);
+  }, [stream]);
 
   const toggleAudio = useCallback(() => {
     if (stream) {
@@ -83,6 +110,12 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       }
     }
   }, [stream]);
+
+  useEffect(() => {
+    return () => {
+      stopAllTracks();
+    };
+  }, [stopAllTracks]);
 
   return {
     localStream: stream,
