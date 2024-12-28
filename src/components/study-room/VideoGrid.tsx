@@ -19,6 +19,7 @@ export const VideoGrid = ({
   isAudioEnabled 
 }: VideoGridProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userProfiles, setUserProfiles] = useState<Map<string, string>>(new Map());
   
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -30,6 +31,28 @@ export const VideoGrid = ({
     getCurrentUser();
   }, []);
 
+  useEffect(() => {
+    const fetchUserProfiles = async () => {
+      const participantIds = Array.from(participants.keys());
+      if (participantIds.length === 0) return;
+
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', participantIds);
+
+      if (!error && profiles) {
+        const profileMap = new Map();
+        profiles.forEach(profile => {
+          profileMap.set(profile.id, profile.full_name || 'Anonymous');
+        });
+        setUserProfiles(profileMap);
+      }
+    };
+
+    fetchUserProfiles();
+  }, [participants]);
+
   console.log("VideoGrid rendering with participants:", {
     total: participants.size,
     currentUserId,
@@ -38,7 +61,7 @@ export const VideoGrid = ({
   
   // Get all participants excluding local user
   const remoteParticipants = Array.from(participants.values())
-    .filter(p => p.id !== currentUserId && p.stream); // Only include participants with streams
+    .filter(p => p.id !== currentUserId && p.stream);
   
   // Calculate grid layout
   const totalParticipants = remoteParticipants.length + (localStream ? 1 : 0);
@@ -49,7 +72,6 @@ export const VideoGrid = ({
     hasLocalStream: !!localStream
   });
 
-  // Calculate grid layout
   const gridCols = totalParticipants <= 1 ? 1 : 
                    totalParticipants <= 4 ? 2 : 
                    totalParticipants <= 9 ? 3 : 4;
@@ -60,7 +82,6 @@ export const VideoGrid = ({
 
   return (
     <div className={gridClassName}>
-      {/* Render local video first */}
       {localStream && currentUserId && (
         <div className="relative aspect-video">
           <ParticipantVideo
@@ -79,12 +100,11 @@ export const VideoGrid = ({
         </div>
       )}
       
-      {/* Render remote participants */}
       {remoteParticipants.map((participant) => (
         <div key={participant.id} className="relative aspect-video">
           <ParticipantVideo
             participant={participant}
-            userName={participant.username}
+            userName={userProfiles.get(participant.id) || participant.username || 'Anonymous'}
             audioLevel={0}
             isAudioEnabled={participant.isAudioEnabled}
           />

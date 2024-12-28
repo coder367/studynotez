@@ -57,13 +57,21 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         updateAudioLevel();
       }
 
+      // Set initial track states
+      newStream.getAudioTracks().forEach(track => {
+        track.enabled = isAudioEnabled;
+      });
+      newStream.getVideoTracks().forEach(track => {
+        track.enabled = !isVoiceOnly && isVideoEnabled;
+      });
+
       setStream(newStream);
       setIsAudioEnabled(true);
       setIsVideoEnabled(!isVoiceOnly);
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
-  }, [isVoiceOnly, stream]);
+  }, [isVoiceOnly, stream, isAudioEnabled, isVideoEnabled]);
 
   const stopAllTracks = useCallback(() => {
     console.log("Stopping all media tracks");
