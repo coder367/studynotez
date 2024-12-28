@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -8,11 +8,13 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [audioTrack, setAudioTrack] = useState<MediaStreamTrack | null>(null);
   const [videoTrack, setVideoTrack] = useState<MediaStreamTrack | null>(null);
+  const animationFrameRef = useRef<number>();
 
   const initializeMedia = useCallback(async () => {
     try {
+      // Clean up existing stream before creating a new one
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stopAllTracks();
       }
 
       console.log("Requesting media permissions...");
@@ -59,30 +61,32 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       setAudioContext(context);
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      let animationFrame: number;
 
       const updateAudioLevel = () => {
         if (context.state === 'closed') return;
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
         setAudioLevel((average / 255) * 100);
-        animationFrame = requestAnimationFrame(updateAudioLevel);
+        animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
       };
       
       updateAudioLevel();
 
       return () => {
-        if (animationFrame) {
-          cancelAnimationFrame(animationFrame);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
         }
       };
     } catch (error) {
       console.error("Error accessing media devices:", error);
     }
-  }, [isVoiceOnly, stream, audioContext]);
+  }, [isVoiceOnly, stream]);
 
   const stopAllTracks = useCallback(() => {
     console.log("Stopping all media tracks");
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
     if (stream) {
       stream.getTracks().forEach(track => {
         track.stop();
@@ -117,12 +121,15 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   }, [videoTrack]);
 
   useEffect(() => {
-    initializeMedia().then(cleanup => {
+    const init = async () => {
+      const cleanup = await initializeMedia();
       return () => {
         cleanup?.();
         stopAllTracks();
       };
-    });
+    };
+    
+    init();
   }, [initializeMedia, stopAllTracks]);
 
   return {
