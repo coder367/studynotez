@@ -13,18 +13,22 @@ export const usePeerConnections = (
   const createPeerConnection = useCallback((peerId: string) => {
     console.log('Creating new peer connection for:', peerId);
     
-    // Remove any existing connection for this peer
+    // Clean up existing connection if any
     if (peerConnections.current.has(peerId)) {
       console.log('Closing existing connection for peer:', peerId);
       const existingConnection = peerConnections.current.get(peerId);
-      existingConnection?.close();
+      if (existingConnection) {
+        existingConnection.getSenders().forEach(sender => {
+          existingConnection.removeTrack(sender);
+        });
+        existingConnection.close();
+      }
       peerConnections.current.delete(peerId);
       removeParticipant(peerId);
     }
     
     const peerConnection = new RTCPeerConnection({
       ...getRTCConfiguration(),
-      iceTransportPolicy: 'all',
     });
 
     // Add all tracks from local stream
@@ -42,7 +46,7 @@ export const usePeerConnections = (
       });
     }
 
-    // Handle remote tracks
+    // Handle remote tracks with proper stream management
     peerConnection.ontrack = (event) => {
       console.log('Received remote track:', {
         kind: event.track.kind,
@@ -51,26 +55,43 @@ export const usePeerConnections = (
       });
       
       if (event.streams?.[0]) {
+        const stream = event.streams[0];
         console.log('Adding participant with stream:', {
           peerId,
-          streamId: event.streams[0].id,
-          tracks: event.streams[0].getTracks().map(t => ({
+          streamId: stream.id,
+          tracks: stream.getTracks().map(t => ({
             kind: t.kind,
             enabled: t.enabled,
             id: t.id
           }))
         });
-        addParticipant(peerId, event.streams[0]);
+
+        // Monitor track endings
+        event.track.onended = () => {
+          console.log(`Remote track ended: ${event.track.id}`);
+        };
+
+        // Monitor track mute/unmute
+        event.track.onmute = () => {
+          console.log(`Remote track muted: ${event.track.id}`);
+        };
+
+        event.track.onunmute = () => {
+          console.log(`Remote track unmuted: ${event.track.id}`);
+        };
+
+        addParticipant(peerId, stream);
       }
     };
 
-    // Improved ICE candidate handling
+    // Enhanced ICE candidate handling
     peerConnection.onicecandidate = async (event) => {
       if (event.candidate) {
         console.log('New ICE candidate:', {
           type: event.candidate.type,
           protocol: event.candidate.protocol,
-          address: event.candidate.address
+          address: event.candidate.address,
+          port: event.candidate.port
         });
         
         const { data: { user } } = await supabase.auth.getUser();
@@ -88,7 +109,7 @@ export const usePeerConnections = (
       }
     };
 
-    // Enhanced connection state monitoring
+    // Improved connection state monitoring
     peerConnection.onconnectionstatechange = () => {
       console.log('Connection state changed:', {
         peerId,
@@ -104,11 +125,12 @@ export const usePeerConnections = (
       }
     };
 
-    // Improved ICE connection state handling
+    // Enhanced ICE connection state handling
     peerConnection.oniceconnectionstatechange = () => {
       console.log('ICE connection state:', {
         peerId,
-        state: peerConnection.iceConnectionState
+        state: peerConnection.iceConnectionState,
+        connectionState: peerConnection.connectionState
       });
       
       if (peerConnection.iceConnectionState === 'failed') {
@@ -117,12 +139,28 @@ export const usePeerConnections = (
       }
     };
 
-    // Monitor signaling state
-    peerConnection.onsignalingstatechange = () => {
-      console.log('Signaling state changed:', {
-        peerId,
-        state: peerConnection.signalingState
-      });
+    // Monitor negotiation needed events
+    peerConnection.onnegotiationneeded = async () => {
+      console.log('Negotiation needed for peer:', peerId);
+      try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const channel = supabase.channel(`room:${roomId}`);
+        await channel.send({
+          type: 'broadcast',
+          event: 'offer',
+          payload: {
+            peerId: user.id,
+            offer: peerConnection.localDescription
+          }
+        });
+      } catch (error) {
+        console.error('Error during negotiation:', error);
+      }
     };
 
     peerConnections.current.set(peerId, peerConnection);

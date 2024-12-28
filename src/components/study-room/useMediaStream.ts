@@ -10,21 +10,27 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
   const initializeMedia = useCallback(async () => {
     try {
       if (stream) {
-        // Clean up existing stream before creating a new one
-        stream.getTracks().forEach(track => track.stop());
+        console.log("Cleaning up existing stream");
+        stream.getTracks().forEach(track => {
+          track.stop();
+          stream.removeTrack(track);
+        });
       }
 
-      console.log("Requesting media permissions...");
+      console.log("Requesting media with constraints");
       const constraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 1
         },
         video: !isVoiceOnly ? {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 30, max: 60 },
+          facingMode: 'user'
         } : false
       };
 
@@ -32,19 +38,24 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       console.log("Media stream obtained:", newStream.getTracks().map(t => ({
         kind: t.kind,
         enabled: t.enabled,
-        id: t.id
+        id: t.id,
+        readyState: t.readyState,
+        muted: t.muted
       })));
 
-      // Ensure tracks are enabled by default
+      // Ensure tracks are properly initialized
       newStream.getTracks().forEach(track => {
         track.enabled = true;
+        track.addEventListener('ended', () => {
+          console.log(`Track ${track.id} ended`);
+        });
       });
 
       setStream(newStream);
       setIsAudioEnabled(true);
       setIsVideoEnabled(!isVoiceOnly);
 
-      // Set up audio level monitoring
+      // Set up audio level monitoring with proper cleanup
       if (newStream.getAudioTracks().length > 0) {
         const context = new AudioContext();
         const source = context.createMediaStreamSource(newStream);
@@ -54,17 +65,29 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
         setAudioContext(context);
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let animationFrame: number;
+
         const updateAudioLevel = () => {
           if (context.state === 'closed') return;
+          
           analyser.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
           setAudioLevel((average / 255) * 100);
-          requestAnimationFrame(updateAudioLevel);
+          
+          animationFrame = requestAnimationFrame(updateAudioLevel);
         };
+
         updateAudioLevel();
+
+        return () => {
+          if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+          }
+        };
       }
     } catch (error) {
       console.error("Error accessing media devices:", error);
+      throw error; // Propagate error for proper handling
     }
   }, [isVoiceOnly, stream]);
 
@@ -73,11 +96,13 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
     if (stream) {
       stream.getTracks().forEach(track => {
         track.stop();
+        stream.removeTrack(track);
       });
       setStream(null);
       setIsAudioEnabled(false);
       setIsVideoEnabled(false);
       setAudioLevel(0);
+      
       if (audioContext) {
         audioContext.close();
         setAudioContext(null);
@@ -91,7 +116,11 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
-        console.log("Audio track toggled:", audioTrack.enabled);
+        console.log("Audio track toggled:", {
+          enabled: audioTrack.enabled,
+          readyState: audioTrack.readyState,
+          muted: audioTrack.muted
+        });
       }
     }
   }, [stream]);
@@ -102,7 +131,11 @@ export const useMediaStream = (isVoiceOnly: boolean = false) => {
       if (videoTrack) {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
-        console.log("Video track toggled:", videoTrack.enabled);
+        console.log("Video track toggled:", {
+          enabled: videoTrack.enabled,
+          readyState: videoTrack.readyState,
+          muted: videoTrack.muted
+        });
       }
     }
   }, [stream]);
