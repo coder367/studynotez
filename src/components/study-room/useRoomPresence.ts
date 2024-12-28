@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Participant } from "@/types/video-call";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 export const useRoomPresence = (roomId: string, userName: string) => {
   const [participants, setParticipants] = useState<Map<string, Participant>>(new Map());
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const mounted = useRef(false);
 
   const addParticipant = useCallback((userId: string, stream?: MediaStream) => {
