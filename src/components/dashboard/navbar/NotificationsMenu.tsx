@@ -89,20 +89,22 @@ const NotificationsMenu = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Mark database notifications as read
       await supabase
         .from("notifications")
         .update({ read: true })
         .eq("user_id", user.id)
         .eq("read", false);
 
+      // Mark messages as read
       await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })
         .eq("receiver_id", user.id)
         .is("read_at", null);
 
+      // Immediately update the local state through React Query
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      setIsOpen(false);
       
       toast({
         title: "Success",
@@ -136,6 +138,7 @@ const NotificationsMenu = () => {
         setIsOpen(false);
       }
       
+      // Immediately update the notifications list
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error: any) {
       console.error("Error handling notification click:", error);
