@@ -75,6 +75,7 @@ export const useNotifications = () => {
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
-    refetchInterval: 10000,
+    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 };
