@@ -12,10 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Settings2, Check } from "lucide-react";
 import NotificationBadge from "./NotificationBadge";
-import { NotificationType, isMessageNotification } from "@/types/notifications";
+import { NotificationType } from "@/types/notifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
+import NotificationItem from "./NotificationItem";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +59,8 @@ const NotificationsMenu = () => {
         data: {
           sender_name: message.sender?.full_name || "Anonymous",
           sender_id: message.sender_id!,
-          avatar_url: message.sender?.avatar_url
+          avatar_url: message.sender?.avatar_url,
+          message: message.content
         },
         created_at: message.created_at,
         read_at: message.read_at
@@ -109,7 +109,7 @@ const NotificationsMenu = () => {
 
   const handleNotificationClick = async (notification: NotificationType) => {
     try {
-      if (notification.type === "new_message" && isMessageNotification(notification)) {
+      if (notification.type === "new_message") {
         if (notification.id.startsWith('message-')) {
           const messageId = notification.id.replace('message-', '');
           await supabase
@@ -133,19 +133,6 @@ const NotificationsMenu = () => {
         description: "Failed to process notification",
         variant: "destructive",
       });
-    }
-  };
-
-  const getNotificationContent = (notification: NotificationType) => {
-    switch (notification.type) {
-      case "new_message":
-        return `${notification.data.sender_name} sent you a message`;
-      case "new_follower":
-        return "Someone started following you";
-      case "new_note":
-        return `New note: ${notification.data.title}`;
-      default:
-        return "New notification";
     }
   };
 
@@ -182,24 +169,11 @@ const NotificationsMenu = () => {
             {notifications.length > 0 ? (
               <div className="space-y-4">
                 {notifications.map((notification) => (
-                  <div
+                  <NotificationItem
                     key={notification.id}
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={notification.data?.avatar_url} />
-                      <AvatarFallback>
-                        {notification.data?.sender_name?.[0] || 'N'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm">{getNotificationContent(notification)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                  </div>
+                    notification={notification}
+                    onNotificationClick={handleNotificationClick}
+                  />
                 ))}
               </div>
             ) : (

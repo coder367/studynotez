@@ -3,9 +3,19 @@ import { Json } from "@/integrations/supabase/types";
 export interface BaseNotification {
   id: string;
   type: string;
-  data: any;
+  data: NotificationData;
   created_at: string;
 }
+
+export type NotificationData = {
+  sender_name?: string;
+  sender_id?: string;
+  avatar_url?: string;
+  note_id?: string;
+  title?: string;
+  message?: string;
+  follower_id?: string;
+};
 
 export interface MessageNotification extends BaseNotification {
   user_id: string;
