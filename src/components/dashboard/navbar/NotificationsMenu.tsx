@@ -6,15 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Settings2, Check } from "lucide-react";
-import NotificationBadge from "./NotificationBadge";
-import { NotificationType } from "@/types/notifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import NotificationBadge from "./NotificationBadge";
 import NotificationItem from "./NotificationItem";
+import NotificationHeader from "./NotificationHeader";
+import { NotificationType } from "@/types/notifications";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -159,25 +156,10 @@ const NotificationsMenu = () => {
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <DialogTitle>Notifications</DialogTitle>
-            <div className="flex items-center gap-2">
-              {notifications.length > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleMarkAllAsRead}
-                  className="text-xs"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Mark all as read
-                </Button>
-              )}
-              <Button variant="ghost" size="icon">
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
+          <NotificationHeader 
+            notificationCount={notifications.length}
+            onMarkAllAsRead={handleMarkAllAsRead}
+          />
 
           <ScrollArea className="h-[400px] pr-4">
             {notifications.length > 0 ? (
