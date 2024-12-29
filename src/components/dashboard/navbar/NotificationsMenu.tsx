@@ -90,20 +90,24 @@ const NotificationsMenu = () => {
       if (!user) return;
 
       // Mark database notifications as read
-      await supabase
+      const { error: notificationError } = await supabase
         .from("notifications")
         .update({ read: true })
         .eq("user_id", user.id)
         .eq("read", false);
 
+      if (notificationError) throw notificationError;
+
       // Mark messages as read
-      await supabase
+      const { error: messageError } = await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })
         .eq("receiver_id", user.id)
         .is("read_at", null);
 
-      // Immediately update the local state through React Query
+      if (messageError) throw messageError;
+
+      // Force refetch to update the UI
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
       
       toast({
@@ -125,10 +129,12 @@ const NotificationsMenu = () => {
       if (notification.type === "new_message") {
         if (notification.id.startsWith('message-')) {
           const messageId = notification.id.replace('message-', '');
-          await supabase
+          const { error } = await supabase
             .from("messages")
             .update({ read_at: new Date().toISOString() })
             .eq("id", messageId);
+            
+          if (error) throw error;
         }
         
         navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
@@ -138,7 +144,7 @@ const NotificationsMenu = () => {
         setIsOpen(false);
       }
       
-      // Immediately update the notifications list
+      // Force refetch to update the UI
       await queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (error: any) {
       console.error("Error handling notification click:", error);
