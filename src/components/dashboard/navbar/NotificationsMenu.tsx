@@ -31,7 +31,14 @@ const NotificationsMenu = () => {
       const [notificationsData, messagesData] = await Promise.all([
         supabase
           .from("notifications")
-          .select("*, sender:profiles!sender_id(*)")
+          .select(`
+            *,
+            sender:profiles!notifications_user_id_fkey (
+              id,
+              full_name,
+              avatar_url
+            )
+          `)
           .eq("user_id", user.id)
           .eq("read", false)
           .order("created_at", { ascending: false }),
@@ -69,7 +76,8 @@ const NotificationsMenu = () => {
 
       const dbNotifications = notificationsData.data.map(notification => ({
         ...notification,
-        data: notification.data as NotificationType['data']
+        data: notification.data as NotificationType['data'],
+        sender: notification.sender || undefined
       }));
 
       return [...dbNotifications, ...messageNotifications].sort(
