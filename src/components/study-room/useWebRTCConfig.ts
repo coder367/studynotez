@@ -35,6 +35,5 @@ export const getRTCConfiguration = (): RTCConfiguration => ({
   bundlePolicy: 'max-bundle',
   rtcpMuxPolicy: 'require',
   // Additional configuration for better connectivity
-  iceServersTransportPolicy: 'all',
   sdpSemantics: 'unified-plan'
 });
