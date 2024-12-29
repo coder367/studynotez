@@ -23,13 +23,20 @@ const NotificationItem = ({ notification, onNotificationClick }: NotificationIte
     }
   };
 
+  const getAvatarUrl = () => {
+    if (notification.sender?.avatar_url) {
+      return notification.sender.avatar_url;
+    }
+    return notification.data.avatar_url;
+  };
+
   return (
     <div
       className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
       onClick={() => onNotificationClick(notification)}
     >
       <Avatar className="h-10 w-10">
-        <AvatarImage src={notification.data.avatar_url} />
+        <AvatarImage src={getAvatarUrl()} />
         <AvatarFallback>
           <User className="h-5 w-5" />
         </AvatarFallback>

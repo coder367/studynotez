@@ -1,5 +1,10 @@
 import { Json } from "@/integrations/supabase/types";
 
+interface Profile {
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface BaseNotification {
   id: string;
   type: string;
@@ -20,11 +25,13 @@ export type NotificationData = {
 export interface MessageNotification extends BaseNotification {
   user_id: string;
   read_at: string | null;
+  sender?: Profile;
 }
 
 export interface DatabaseNotification extends BaseNotification {
   user_id: string | null;
   read: boolean | null;
+  sender?: Profile;
 }
 
 export type NotificationType = MessageNotification | DatabaseNotification;

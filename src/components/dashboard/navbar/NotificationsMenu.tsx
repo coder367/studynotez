@@ -54,7 +54,7 @@ const NotificationsMenu = () => {
 
       const messageNotifications = messagesData.data.map(message => ({
         id: `message-${message.id}`,
-        type: "new_message",
+        type: "new_message" as const,
         user_id: message.receiver_id!,
         data: {
           sender_name: message.sender?.full_name || "Anonymous",
@@ -63,10 +63,16 @@ const NotificationsMenu = () => {
           message: message.content
         },
         created_at: message.created_at,
-        read_at: message.read_at
+        read_at: message.read_at,
+        sender: message.sender
       }));
 
-      return [...notificationsData.data, ...messageNotifications].sort(
+      const dbNotifications = notificationsData.data.map(notification => ({
+        ...notification,
+        data: notification.data as NotificationType['data']
+      }));
+
+      return [...dbNotifications, ...messageNotifications].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
