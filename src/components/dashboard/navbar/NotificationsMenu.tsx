@@ -19,9 +19,10 @@ const NotificationsMenu = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], refetch } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
+      console.log("Fetching notifications...");
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
@@ -52,6 +53,9 @@ const NotificationsMenu = () => {
           .is("read_at", null)
           .order("created_at", { ascending: false })
       ]);
+
+      console.log("Notifications data:", notificationsData);
+      console.log("Messages data:", messagesData);
 
       if (notificationsData.error) throw notificationsData.error;
       if (messagesData.error) throw messagesData.error;
@@ -86,6 +90,7 @@ const NotificationsMenu = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
+      console.log("Marking all notifications as read...");
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -108,7 +113,7 @@ const NotificationsMenu = () => {
       if (messageError) throw messageError;
 
       // Force refetch to update the UI
-      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      await refetch();
       
       toast({
         title: "Success",
@@ -126,6 +131,7 @@ const NotificationsMenu = () => {
 
   const handleNotificationClick = async (notification: NotificationType) => {
     try {
+      console.log("Handling notification click:", notification);
       if (notification.type === "new_message") {
         if (notification.id.startsWith('message-')) {
           const messageId = notification.id.replace('message-', '');
@@ -145,7 +151,7 @@ const NotificationsMenu = () => {
       }
       
       // Force refetch to update the UI
-      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      await refetch();
     } catch (error: any) {
       console.error("Error handling notification click:", error);
       toast({
