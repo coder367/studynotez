@@ -8,21 +8,22 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import NotificationItem from "./NotificationItem";
+import { Settings2, Check } from "lucide-react";
 import NotificationBadge from "./NotificationBadge";
 import { NotificationType, isMessageNotification } from "@/types/notifications";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatDistanceToNow } from "date-fns";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [exitingNotifications, setExitingNotifications] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: notifications = [], refetch: refetchNotifications } = useQuery({
+  const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -31,7 +32,7 @@ const NotificationsMenu = () => {
       const [notificationsData, messagesData] = await Promise.all([
         supabase
           .from("notifications")
-          .select("*")
+          .select("*, sender:profiles!sender_id(*)")
           .eq("user_id", user.id)
           .eq("read", false)
           .order("created_at", { ascending: false }),
@@ -40,7 +41,8 @@ const NotificationsMenu = () => {
           .select(`
             *,
             sender:profiles!messages_sender_id_fkey (
-              full_name
+              full_name,
+              avatar_url
             )
           `)
           .eq("receiver_id", user.id)
@@ -57,8 +59,8 @@ const NotificationsMenu = () => {
         user_id: message.receiver_id!,
         data: {
           sender_name: message.sender?.full_name || "Anonymous",
-          message: message.content,
-          sender_id: message.sender_id!
+          sender_id: message.sender_id!,
+          avatar_url: message.sender?.avatar_url
         },
         created_at: message.created_at,
         read_at: message.read_at
@@ -71,39 +73,8 @@ const NotificationsMenu = () => {
     refetchInterval: 10000,
   });
 
-  const handleNotificationClick = async (notification: NotificationType) => {
-    try {
-      if (notification.type === "new_message" && 
-          typeof notification.data === 'object' && 
-          notification.data !== null && 
-          'sender_id' in notification.data) {
-        
-        if (isMessageNotification(notification) && notification.id.startsWith('message-')) {
-          const messageId = notification.id.replace('message-', '');
-          await supabase
-            .from("messages")
-            .update({ read_at: new Date().toISOString() })
-            .eq("id", messageId);
-        }
-        
-        navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
-        setIsOpen(false);
-        await refetchNotifications();
-      }
-    } catch (error: any) {
-      console.error("Error handling notification click:", error);
-      toast({
-        title: "Error",
-        description: "Failed to process notification",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleMarkAllAsRead = async () => {
     try {
-      setExitingNotifications(notifications.map(n => n.id));
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -119,8 +90,7 @@ const NotificationsMenu = () => {
         .eq("receiver_id", user.id)
         .is("read_at", null);
 
-      await refetchNotifications();
-      setExitingNotifications([]);
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
       setIsOpen(false);
       
       toast({
@@ -137,6 +107,48 @@ const NotificationsMenu = () => {
     }
   };
 
+  const handleNotificationClick = async (notification: NotificationType) => {
+    try {
+      if (notification.type === "new_message" && isMessageNotification(notification)) {
+        if (notification.id.startsWith('message-')) {
+          const messageId = notification.id.replace('message-', '');
+          await supabase
+            .from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .eq("id", messageId);
+        }
+        
+        navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
+        setIsOpen(false);
+      } else if (notification.type === "new_note") {
+        navigate(`/dashboard/notes?note=${notification.data.note_id}`);
+        setIsOpen(false);
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    } catch (error: any) {
+      console.error("Error handling notification click:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process notification",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getNotificationContent = (notification: NotificationType) => {
+    switch (notification.type) {
+      case "new_message":
+        return `${notification.data.sender_name} sent you a message`;
+      case "new_follower":
+        return "Someone started following you";
+      case "new_note":
+        return `New note: ${notification.data.title}`;
+      default:
+        return "New notification";
+    }
+  };
+
   return (
     <div className="relative">
       <NotificationBadge 
@@ -145,34 +157,57 @@ const NotificationsMenu = () => {
       />
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <div className="flex items-center justify-between gap-8">
-              <DialogTitle>Notifications</DialogTitle>
+        <DialogContent className="max-w-md">
+          <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <DialogTitle>Notifications</DialogTitle>
+            <div className="flex items-center gap-2">
               {notifications.length > 0 && (
-                <Button onClick={handleMarkAllAsRead} variant="outline" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleMarkAllAsRead}
+                  className="text-xs"
+                >
+                  <Check className="h-4 w-4 mr-1" />
                   Mark all as read
                 </Button>
               )}
+              <Button variant="ghost" size="icon">
+                <Settings2 className="h-4 w-4" />
+              </Button>
             </div>
-            <DialogDescription>Your recent notifications</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-4">
+
+          <ScrollArea className="h-[400px] pr-4">
             {notifications.length > 0 ? (
-              notifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onNotificationClick={handleNotificationClick}
-                  isExiting={exitingNotifications.includes(notification.id)}
-                />
-              ))
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={notification.data?.avatar_url} />
+                      <AvatarFallback>
+                        {notification.data?.sender_name?.[0] || 'N'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm">{getNotificationContent(notification)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="col-span-2 text-center text-muted-foreground py-8">
+              <div className="text-center text-muted-foreground py-8">
                 No new notifications
               </div>
             )}
-          </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
