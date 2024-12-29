@@ -41,8 +41,14 @@ export const useNotifications = () => {
       console.log("Notifications data:", notificationsData);
       console.log("Messages data:", messagesData);
 
-      if (notificationsData.error) throw notificationsData.error;
-      if (messagesData.error) throw messagesData.error;
+      if (notificationsData.error) {
+        console.error("Error fetching notifications:", notificationsData.error);
+        throw notificationsData.error;
+      }
+      if (messagesData.error) {
+        console.error("Error fetching messages:", messagesData.error);
+        throw messagesData.error;
+      }
 
       const messageNotifications = messagesData.data.map(message => ({
         id: `message-${message.id}`,

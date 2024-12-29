@@ -18,7 +18,10 @@ export const useNotificationActions = (refetch: () => Promise<any>) => {
         .eq("user_id", user.id)
         .eq("read", false);
 
-      if (notificationError) throw notificationError;
+      if (notificationError) {
+        console.error("Error marking notifications as read:", notificationError);
+        throw notificationError;
+      }
 
       // Mark messages as read
       const { error: messageError } = await supabase
@@ -27,7 +30,10 @@ export const useNotificationActions = (refetch: () => Promise<any>) => {
         .eq("receiver_id", user.id)
         .is("read_at", null);
 
-      if (messageError) throw messageError;
+      if (messageError) {
+        console.error("Error marking messages as read:", messageError);
+        throw messageError;
+      }
 
       // Force refetch to update the UI
       await refetch();
@@ -57,7 +63,10 @@ export const useNotificationActions = (refetch: () => Promise<any>) => {
             .update({ read_at: new Date().toISOString() })
             .eq("id", messageId);
             
-          if (error) throw error;
+          if (error) {
+            console.error("Error marking message as read:", error);
+            throw error;
+          }
         }
       } else {
         // Mark regular notification as read
@@ -66,7 +75,10 @@ export const useNotificationActions = (refetch: () => Promise<any>) => {
           .update({ read: true })
           .eq("id", notification.id);
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error marking notification as read:", error);
+          throw error;
+        }
       }
       
       // Force refetch to update the UI
