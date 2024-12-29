@@ -9,22 +9,23 @@ export const getRTCConfiguration = (): RTCConfiguration => ({
       ],
     },
     {
-      // OpenRelay TURN servers - more reliable for cross-network connections
+      // Metered TURN servers - more reliable for cross-network connections
       urls: [
-        'turn:openrelay.metered.ca:80',
-        'turn:openrelay.metered.ca:443',
-        'turn:openrelay.metered.ca:443?transport=tcp',
-        'turn:openrelay.metered.ca:80?transport=tcp',
+        'turn:a.relay.metered.ca:80',
+        'turn:a.relay.metered.ca:80?transport=tcp',
+        'turn:a.relay.metered.ca:443',
+        'turn:a.relay.metered.ca:443?transport=tcp',
       ],
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      username: 'e8dd65441fc6e40f9abde782',
+      credential: 'L8uT/bEFxNbhvMK/',
     },
     {
       // Additional backup TURN servers
       urls: [
-        'turn:relay1.metered.ca:80',
-        'turn:relay1.metered.ca:443',
-        'turn:relay1.metered.ca:443?transport=tcp',
+        'turn:b.relay.metered.ca:80',
+        'turn:b.relay.metered.ca:80?transport=tcp',
+        'turn:b.relay.metered.ca:443',
+        'turn:b.relay.metered.ca:443?transport=tcp',
       ],
       username: 'e8dd65441fc6e40f9abde782',
       credential: 'L8uT/bEFxNbhvMK/',
