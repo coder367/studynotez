@@ -9,31 +9,22 @@ export const getRTCConfiguration = (): RTCConfiguration => ({
       ],
     },
     {
-      // Additional STUN servers for better connectivity
+      // OpenRelay TURN servers - more reliable for cross-network connections
       urls: [
-        'stun:stun.stunprotocol.org:3478',
-        'stun:stun.voip.blackberry.com:3478',
-        'stun:stun.nextcloud.com:443'
-      ]
-    },
-    {
-      // Production-grade TURN servers from Metered
-      urls: [
-        'turn:a.relay.metered.ca:80',
-        'turn:a.relay.metered.ca:80?transport=tcp',
-        'turn:a.relay.metered.ca:443',
-        'turn:a.relay.metered.ca:443?transport=tcp',
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp',
+        'turn:openrelay.metered.ca:80?transport=tcp',
       ],
-      username: 'e8dd65441fc6e40f9abde782',
-      credential: 'L8uT/bEFxNbhvMK/',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
     },
     {
-      // Backup TURN servers
+      // Additional backup TURN servers
       urls: [
-        'turn:b.relay.metered.ca:80',
-        'turn:b.relay.metered.ca:80?transport=tcp',
-        'turn:b.relay.metered.ca:443',
-        'turn:b.relay.metered.ca:443?transport=tcp',
+        'turn:relay1.metered.ca:80',
+        'turn:relay1.metered.ca:443',
+        'turn:relay1.metered.ca:443?transport=tcp',
       ],
       username: 'e8dd65441fc6e40f9abde782',
       credential: 'L8uT/bEFxNbhvMK/',
@@ -43,4 +34,7 @@ export const getRTCConfiguration = (): RTCConfiguration => ({
   iceTransportPolicy: 'all',
   bundlePolicy: 'max-bundle',
   rtcpMuxPolicy: 'require',
+  // Additional configuration for better connectivity
+  iceServersTransportPolicy: 'all',
+  sdpSemantics: 'unified-plan'
 });

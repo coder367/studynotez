@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,11 +17,32 @@ interface ProfileSetupModalProps {
 export const ProfileSetupModal = ({ isOpen, onClose, userId }: ProfileSetupModalProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [shouldShow, setShouldShow] = useState(true);
   const [profileDetails, setProfileDetails] = useState({
     full_name: "",
-    university: "",
     bio: "",
   });
+
+  useEffect(() => {
+    const checkExistingProfile = async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, bio")
+        .eq("id", userId)
+        .single();
+
+      if (profile?.full_name) {
+        setShouldShow(false);
+        onClose();
+      } else {
+        setShouldShow(true);
+      }
+    };
+
+    if (userId) {
+      checkExistingProfile();
+    }
+  }, [userId, onClose]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -54,6 +75,8 @@ export const ProfileSetupModal = ({ isOpen, onClose, userId }: ProfileSetupModal
       });
     }
   };
+
+  if (!shouldShow) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

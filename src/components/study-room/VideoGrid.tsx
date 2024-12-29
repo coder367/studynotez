@@ -31,8 +31,12 @@ export const VideoGrid = ({
     getCurrentUser();
   }, []);
 
-  // Fetch profiles for all participants
+  // Fetch profiles for all participants including current user
   const participantIds = Array.from(participants.keys());
+  if (currentUserId && !participantIds.includes(currentUserId)) {
+    participantIds.push(currentUserId);
+  }
+
   const { data: profiles } = useQuery({
     queryKey: ["participantProfiles", participantIds],
     queryFn: async () => {
@@ -44,6 +48,7 @@ export const VideoGrid = ({
       return data || [];
     },
     enabled: participantIds.length > 0,
+    refetchInterval: 5000, // Refresh every 5 seconds to ensure names are up to date
   });
 
   // Create a map of user IDs to profile names
@@ -51,25 +56,13 @@ export const VideoGrid = ({
     profiles?.map(profile => [profile.id, profile.full_name]) || []
   );
 
-  console.log("VideoGrid rendering with participants:", {
-    total: participants.size,
-    currentUserId,
-    participantIds: Array.from(participants.keys())
-  });
-  
   // Get all participants excluding local user
   const remoteParticipants = Array.from(participants.values())
-    .filter(p => p.id !== currentUserId && p.stream);
+    .filter(p => p.id !== currentUserId);
   
   // Calculate grid layout
   const totalParticipants = remoteParticipants.length + (localStream ? 1 : 0);
   
-  console.log("Participants breakdown:", {
-    total: totalParticipants,
-    remote: remoteParticipants.length,
-    hasLocalStream: !!localStream
-  });
-
   const gridCols = totalParticipants <= 1 ? 1 : 
                    totalParticipants <= 4 ? 2 : 
                    totalParticipants <= 9 ? 3 : 4;
@@ -86,12 +79,12 @@ export const VideoGrid = ({
             participant={{ 
               id: currentUserId,
               stream: localStream,
-              username: userName,
+              username: profileNames.get(currentUserId) || userName,
               isAudioEnabled,
               isVideoEnabled: true
             }}
             isLocal={true}
-            userName={userName}
+            userName={profileNames.get(currentUserId) || userName}
             audioLevel={audioLevel}
             isAudioEnabled={isAudioEnabled}
           />
