@@ -22,7 +22,7 @@ export const useNotifications = () => {
             )
           `)
           .eq("user_id", user.id)
-          .eq("read", false)
+          .eq("read", false) // Only fetch unread notifications
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
@@ -34,7 +34,7 @@ export const useNotifications = () => {
             )
           `)
           .eq("receiver_id", user.id)
-          .is("read_at", null)
+          .is("read_at", null) // Only fetch unread messages
           .order("created_at", { ascending: false })
       ]);
 

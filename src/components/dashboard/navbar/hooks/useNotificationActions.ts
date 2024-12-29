@@ -35,7 +35,7 @@ export const useNotificationActions = (refetch: () => Promise<any>) => {
         throw messageError;
       }
 
-      // Force refetch to update the UI
+      // Force refetch to update the UI immediately
       await refetch();
       
       toast({
@@ -81,7 +81,7 @@ export const useNotificationActions = (refetch: () => Promise<any>) => {
         }
       }
       
-      // Force refetch to update the UI
+      // Force refetch to update the UI immediately
       await refetch();
     } catch (error: any) {
       console.error("Error handling notification click:", error);

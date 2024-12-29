@@ -15,7 +15,7 @@ import { NotificationType } from "@/types/notifications";
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const { data: notifications = [], refetch } = useNotifications();
+  const { data: notifications = [], refetch, isLoading } = useNotifications();
   const { markAllAsRead, handleNotificationClick: handleClick } = useNotificationActions(refetch);
 
   const handleNotificationClick = async (notification: NotificationType) => {
@@ -29,6 +29,12 @@ const NotificationsMenu = () => {
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+    // After marking all as read, force a refetch to update the UI
+    await refetch();
+  };
+
   return (
     <div className="relative">
       <NotificationBadge 
@@ -40,11 +46,15 @@ const NotificationsMenu = () => {
         <DialogContent className="max-w-md">
           <NotificationHeader 
             notificationCount={notifications.length}
-            onMarkAllAsRead={markAllAsRead}
+            onMarkAllAsRead={handleMarkAllAsRead}
           />
 
           <ScrollArea className="h-[400px] pr-4">
-            {notifications.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center text-muted-foreground py-8">
+                Loading notifications...
+              </div>
+            ) : notifications.length > 0 ? (
               <div className="space-y-4">
                 {notifications.map((notification) => (
                   <NotificationItem
