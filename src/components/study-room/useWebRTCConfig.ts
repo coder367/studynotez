@@ -1,6 +1,5 @@
 export const getRTCConfiguration = (): RTCConfiguration => ({
   iceServers: [
-    // Google STUN servers
     {
       urls: [
         'stun:stun1.l.google.com:19302',
@@ -9,33 +8,35 @@ export const getRTCConfiguration = (): RTCConfiguration => ({
         'stun:stun4.l.google.com:19302',
       ],
     },
-    // Additional STUN servers for better connectivity
     {
+      // Additional STUN servers for better connectivity
       urls: [
         'stun:stun.stunprotocol.org:3478',
         'stun:stun.voip.blackberry.com:3478',
         'stun:stun.nextcloud.com:443'
       ]
     },
-    // Free TURN servers for development/testing
     {
+      // Production-grade TURN servers from Metered
       urls: [
-        'turn:openrelay.metered.ca:80',
-        'turn:openrelay.metered.ca:443',
-        'turn:openrelay.metered.ca:443?transport=tcp'
+        'turn:a.relay.metered.ca:80',
+        'turn:a.relay.metered.ca:80?transport=tcp',
+        'turn:a.relay.metered.ca:443',
+        'turn:a.relay.metered.ca:443?transport=tcp',
       ],
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      username: 'e8dd65441fc6e40f9abde782',
+      credential: 'L8uT/bEFxNbhvMK/',
     },
-    // Additional TURN servers for better reliability
     {
+      // Backup TURN servers
       urls: [
-        'turn:relay.metered.ca:80',
-        'turn:relay.metered.ca:443',
-        'turn:relay.metered.ca:443?transport=tcp'
+        'turn:b.relay.metered.ca:80',
+        'turn:b.relay.metered.ca:80?transport=tcp',
+        'turn:b.relay.metered.ca:443',
+        'turn:b.relay.metered.ca:443?transport=tcp',
       ],
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      username: 'e8dd65441fc6e40f9abde782',
+      credential: 'L8uT/bEFxNbhvMK/',
     }
   ],
   iceCandidatePoolSize: 10,

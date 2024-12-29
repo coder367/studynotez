@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getRTCConfiguration } from './useWebRTCConfig';
+import { useToast } from '@/hooks/use-toast';
 
 export const usePeerConnections = (
   roomId: string,
@@ -9,11 +10,13 @@ export const usePeerConnections = (
   removeParticipant: (id: string) => void
 ) => {
   const peerConnections = useRef(new Map<string, RTCPeerConnection>());
+  const { toast } = useToast();
+  const reconnectionAttempts = useRef(new Map<string, number>());
+  const MAX_RECONNECTION_ATTEMPTS = 3;
 
   const createPeerConnection = useCallback((peerId: string) => {
     console.log('Creating new peer connection for:', peerId);
     
-    // Remove any existing connection for this peer
     if (peerConnections.current.has(peerId)) {
       console.log('Closing existing connection for peer:', peerId);
       const existingConnection = peerConnections.current.get(peerId);
@@ -24,38 +27,61 @@ export const usePeerConnections = (
     
     const peerConnection = new RTCPeerConnection(getRTCConfiguration());
 
-    // Add connection state logging
-    peerConnection.onconnectionstatechange = () => {
+    const handleConnectionStateChange = async () => {
       console.log(`Connection state changed for peer ${peerId}:`, peerConnection.connectionState);
+      
       if (['failed', 'closed', 'disconnected'].includes(peerConnection.connectionState)) {
-        console.log('Connection failed or closed, removing participant:', peerId);
-        removeParticipant(peerId);
-        peerConnections.current.delete(peerId);
+        const attempts = reconnectionAttempts.current.get(peerId) || 0;
+        
+        if (attempts < MAX_RECONNECTION_ATTEMPTS) {
+          console.log(`Attempting reconnection ${attempts + 1}/${MAX_RECONNECTION_ATTEMPTS} for peer:`, peerId);
+          reconnectionAttempts.current.set(peerId, attempts + 1);
+          
+          // Close existing connection
+          peerConnection.close();
+          peerConnections.current.delete(peerId);
+          removeParticipant(peerId);
+          
+          // Trigger a new connection attempt
+          const channel = supabase.channel(`room:${roomId}`);
+          await channel.send({
+            type: 'broadcast',
+            event: 'peer-join',
+            payload: { peerId }
+          });
+          
+          toast({
+            title: "Connection Issue",
+            description: "Attempting to reconnect...",
+            variant: "default",
+          });
+        } else {
+          console.log('Max reconnection attempts reached for peer:', peerId);
+          removeParticipant(peerId);
+          reconnectionAttempts.current.delete(peerId);
+          
+          toast({
+            title: "Connection Failed",
+            description: "Unable to establish connection with peer. Please try rejoining the room.",
+            variant: "destructive",
+          });
+        }
+      } else if (peerConnection.connectionState === 'connected') {
+        reconnectionAttempts.current.delete(peerId);
+        console.log('Connection established successfully with peer:', peerId);
       }
     };
 
-    // Enhanced ICE connection state handling
+    peerConnection.onconnectionstatechange = handleConnectionStateChange;
+
     peerConnection.oniceconnectionstatechange = () => {
       console.log(`ICE connection state for peer ${peerId}:`, peerConnection.iceConnectionState);
-      switch (peerConnection.iceConnectionState) {
-        case 'failed':
-          console.log('ICE connection failed, attempting restart...');
-          peerConnection.restartIce();
-          break;
-        case 'disconnected':
-          console.log('ICE connection disconnected, waiting for reconnection...');
-          // Wait for potential recovery
-          setTimeout(() => {
-            if (peerConnection.iceConnectionState === 'disconnected') {
-              console.log('Connection did not recover, restarting...');
-              peerConnection.restartIce();
-            }
-          }, 5000);
-          break;
+      if (peerConnection.iceConnectionState === 'failed') {
+        console.log('ICE connection failed, attempting restart...');
+        peerConnection.restartIce();
       }
     };
 
-    // Add ICE candidate handling with detailed logging
     peerConnection.onicecandidate = async (event) => {
       if (event.candidate) {
         console.log('New ICE candidate:', {
@@ -79,7 +105,6 @@ export const usePeerConnections = (
       }
     };
 
-    // Add track handling
     if (localStream) {
       console.log('Adding local tracks to peer connection');
       localStream.getTracks().forEach(track => {
@@ -90,7 +115,6 @@ export const usePeerConnections = (
       });
     }
 
-    // Handle incoming tracks
     peerConnection.ontrack = (event) => {
       console.log('Received remote track:', event.track.kind);
       if (event.streams?.[0]) {
@@ -103,30 +127,9 @@ export const usePeerConnections = (
       }
     };
 
-    // Add negotiation needed handler
-    peerConnection.onnegotiationneeded = async () => {
-      console.log('Negotiation needed for peer:', peerId);
-      try {
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const channel = supabase.channel(`room:${roomId}`);
-        await channel.send({
-          type: 'broadcast',
-          event: 'offer',
-          payload: { peerId: user.id, offer }
-        });
-      } catch (error) {
-        console.error('Error during negotiation:', error);
-      }
-    };
-
     peerConnections.current.set(peerId, peerConnection);
     return peerConnection;
-  }, [localStream, addParticipant, removeParticipant, roomId]);
+  }, [localStream, addParticipant, removeParticipant, roomId, toast]);
 
   return {
     peerConnections,
