@@ -33,12 +33,13 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
 
   const handleZoomStart = async () => {
     try {
-      // Initialize Zoom SDK
-      const { data: zoomConfig } = await supabase
+      const { data: zoomConfig, error } = await supabase
         .from('zoom_meetings')
         .select('meeting_url, password')
         .eq('room_id', roomId)
         .single();
+
+      if (error) throw error;
 
       if (zoomConfig) {
         window.open(zoomConfig.meeting_url, '_blank');
@@ -50,11 +51,11 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error starting Zoom meeting:", error);
       toast({
         title: "Error",
-        description: "Failed to start Zoom meeting",
+        description: error.message || "Failed to start Zoom meeting",
         variant: "destructive",
       });
     }

@@ -393,6 +393,38 @@ export type Database = {
           },
         ]
       }
+      zoom_meetings: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_url: string
+          password: string | null
+          room_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_url: string
+          password?: string | null
+          room_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_url?: string
+          password?: string | null
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zoom_meetings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "study_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
