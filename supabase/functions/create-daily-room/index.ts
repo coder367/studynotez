@@ -11,10 +11,25 @@ serve(async (req) => {
   }
 
   try {
-    const { roomName } = await req.json()
+    // Validate request body
+    let body;
+    try {
+      body = await req.json()
+    } catch (e) {
+      console.error('Error parsing request body:', e)
+      throw new Error('Invalid request body')
+    }
+
+    const { roomName } = body
     
     if (!roomName) {
+      console.error('Room name is missing')
       throw new Error('Room name is required')
+    }
+
+    if (!DAILY_API_KEY) {
+      console.error('Daily API key is missing')
+      throw new Error('Daily API key is not configured')
     }
 
     console.log(`Creating Daily.co room: ${roomName}`)
@@ -40,6 +55,7 @@ serve(async (req) => {
     const data = await response.json()
     
     if (!response.ok) {
+      console.error('Daily.co API error:', data)
       throw new Error(data.error || 'Failed to create Daily.co room')
     }
 
@@ -47,15 +63,26 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   } catch (error) {
     console.error('Error creating Daily.co room:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        details: error instanceof Error ? error.stack : undefined 
+      }),
       { 
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
       }
     )
   }
