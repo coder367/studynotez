@@ -8,11 +8,13 @@ import { useRoomPresence } from "./useRoomPresence";
 import { useWebRTC } from "./useWebRTC";
 import { useToast } from "@/hooks/use-toast";
 import { VideoGrid } from "./VideoGrid";
+import { Button } from "@/components/ui/button";
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userName, setUserName] = useState<string>("");
+  const [isZoomEnabled, setIsZoomEnabled] = useState(false);
   
   const { 
     localStream,
@@ -27,8 +29,36 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   
   const { participants, addParticipant, removeParticipant } = useRoomPresence(roomId, userName);
   
-  // Initialize WebRTC with all required parameters
   useWebRTC(roomId, localStream, addParticipant, removeParticipant);
+
+  const handleZoomStart = async () => {
+    try {
+      // Initialize Zoom SDK
+      const { data: zoomConfig } = await supabase
+        .from('zoom_meetings')
+        .select('meeting_url, password')
+        .eq('room_id', roomId)
+        .single();
+
+      if (zoomConfig) {
+        window.open(zoomConfig.meeting_url, '_blank');
+        setIsZoomEnabled(true);
+      } else {
+        toast({
+          title: "Zoom Meeting Not Found",
+          description: "Unable to start Zoom meeting for this room",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error starting Zoom meeting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start Zoom meeting",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     console.log("Initializing media stream");
@@ -80,6 +110,16 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          onClick={handleZoomStart}
+          disabled={isZoomEnabled}
+        >
+          {isZoomEnabled ? "Zoom Meeting Active" : "Start Zoom Meeting"}
+        </Button>
+      </div>
+
       <VideoGrid
         participants={participants}
         localStream={localStream}
