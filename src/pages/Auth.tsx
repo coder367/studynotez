@@ -86,11 +86,11 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-3/5 bg-primary/10">
-        <div className="w-full h-full flex items-center justify-center p-12">
+        <div className="w-full h-full relative">
           <img
-            src="/lovable-uploads/512a778d-393c-480d-a18d-909bb67947af.png"
-            alt="Study stress illustration"
-            className="w-full h-full object-contain animate-float"
+            src="/lovable-uploads/7a435b7c-c19c-4435-9492-b8a2efa31866.png"
+            alt="Student studying with headphones"
+            className="absolute inset-0 w-full h-full object-cover"
           />
         </div>
       </div>
