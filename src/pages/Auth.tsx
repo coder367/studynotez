@@ -88,9 +88,9 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-3/5 bg-primary/10">
         <div className="w-full h-full flex items-center justify-center p-12">
           <img
-            src="/lovable-uploads/dabb59b6-cb0f-4174-bff0-7de4be232b04.png"
+            src="/lovable-uploads/512a778d-393c-480d-a18d-909bb67947af.png"
             alt="Study stress illustration"
-            className="max-w-full max-h-full object-contain animate-float"
+            className="w-full h-full object-contain animate-float"
           />
         </div>
       </div>
@@ -122,24 +122,6 @@ const Auth = () => {
             }}
             providers={["google"]}
             redirectTo={`${window.location.origin}/auth/callback`}
-            onError={(error) => {
-              console.error("Auth error:", error);
-              if (error.message.includes("Email not confirmed")) {
-                toast({
-                  variant: "destructive",
-                  title: "Email Not Verified",
-                  description: "Please verify your email before signing in. Check your inbox for the verification link.",
-                });
-                setUserEmail(error.email);
-                setShowResendButton(true);
-              } else {
-                toast({
-                  variant: "destructive",
-                  title: "Error",
-                  description: error.message,
-                });
-              }
-            }}
             localization={{
               variables: {
                 sign_up: {

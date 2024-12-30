@@ -17,7 +17,7 @@ export const AuthHeader = () => {
       </Button>
       <div>
         <h2 className="text-3xl font-bold tracking-tight heading-gradient">
-          Welcome to StudyNotes
+          Welcome to Notez
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Join our community of students sharing knowledge
