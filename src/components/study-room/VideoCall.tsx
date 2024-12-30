@@ -37,17 +37,20 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         .from('zoom_meetings')
         .select('meeting_url, password')
         .eq('room_id', roomId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database error:", error);
+        throw new Error("Failed to fetch Zoom meeting details");
+      }
 
       if (zoomConfig) {
         window.open(zoomConfig.meeting_url, '_blank');
         setIsZoomEnabled(true);
       } else {
         toast({
-          title: "Zoom Meeting Not Found",
-          description: "Unable to start Zoom meeting for this room",
+          title: "No Zoom Meeting Found",
+          description: "No Zoom meeting has been set up for this room yet.",
           variant: "destructive",
         });
       }
