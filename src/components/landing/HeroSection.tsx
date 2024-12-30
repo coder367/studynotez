@@ -5,16 +5,12 @@ const HeroSection = () => {
   return (
     <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto text-center">
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 animate-fade-up">
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 animate-fade-up leading-tight">
           <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 bg-clip-text text-transparent">
-            Share Notes
+            Share Notes &
           </span>
           <br />
           <span className="bg-gradient-to-r from-indigo-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-            Connect
-          </span>
-          <br />
-          <span className="bg-gradient-to-r from-purple-400 via-indigo-500 to-blue-600 bg-clip-text text-transparent">
             Excel Together
           </span>
         </h1>

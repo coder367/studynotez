@@ -19,7 +19,9 @@ const NotificationsMenu = () => {
   const navigate = useNavigate();
   const { toast: internalToast } = useToast();
   const { data: notifications = [], refetch, isLoading } = useNotifications();
-  const { markAllAsRead, handleNotificationClick: handleClick } = useNotificationActions(refetch);
+  const { markAllAsRead, handleNotificationClick: handleClick } = useNotificationActions(async () => {
+    await refetch();
+  });
 
   const handleNotificationClick = async (notification: NotificationType) => {
     try {
