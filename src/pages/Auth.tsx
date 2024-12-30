@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ProfileSetupModal } from "@/components/profile/ProfileSetupModal";
+import { AuthHeader } from "@/components/auth/AuthHeader";
+import { ResendVerification } from "@/components/auth/ResendVerification";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -55,11 +55,14 @@ const Auth = () => {
         }
       } else if (event === "SIGNED_OUT") {
         navigate("/");
-      } else if (event === "TOKEN_REFRESHED") {
-        console.log("Token refreshed successfully");
+      } else if (event === "PASSWORD_RECOVERY") {
+        toast({
+          title: "Password Reset Email Sent",
+          description: "Please check your email for the password reset link",
+        });
       } else if (event === "USER_UPDATED") {
         console.log("User updated:", session);
-      } else if (event === "EMAIL_SIGNUP") { // Changed from "SIGNED_UP" to "EMAIL_SIGNUP"
+      } else if (event === "INITIAL_SESSION") {
         setUserEmail(session?.user.email ?? null);
         setShowResendButton(true);
       }
@@ -69,31 +72,6 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate, toast]);
-
-  const handleResendVerification = async () => {
-    if (!userEmail) return;
-
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: userEmail,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Verification email sent",
-        description: "Please check your inbox for the verification link",
-      });
-    } catch (error: any) {
-      console.error("Error resending verification:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to resend verification email",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -117,24 +95,7 @@ const Auth = () => {
 
       <div className="w-full lg:w-2/5 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight heading-gradient">
-                Welcome to StudyNotes
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Join our community of students sharing knowledge
-              </p>
-            </div>
-          </div>
+          <AuthHeader />
 
           <SupabaseAuth
             supabaseClient={supabase}
@@ -177,24 +138,21 @@ const Auth = () => {
                   button_label: "Sign in",
                   loading_button_label: "Signing in ...",
                 },
+                forgotten_password: {
+                  email_label: "Email",
+                  password_label: "Password",
+                  email_input_placeholder: "Your email address",
+                  button_label: "Send reset instructions",
+                  loading_button_label: "Sending reset instructions...",
+                },
               },
             }}
           />
 
-          {showResendButton && userEmail && (
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-2">
-                Didn't receive the verification email?
-              </p>
-              <Button
-                variant="outline"
-                onClick={handleResendVerification}
-                className="w-full"
-              >
-                Resend Verification Email
-              </Button>
-            </div>
-          )}
+          <ResendVerification 
+            userEmail={userEmail}
+            show={showResendButton}
+          />
         </div>
       </div>
 
