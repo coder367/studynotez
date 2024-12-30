@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-export const HeroSection = () => {
+const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
@@ -37,3 +37,5 @@ export const HeroSection = () => {
     </section>
   );
 };
+
+export default HeroSection;
