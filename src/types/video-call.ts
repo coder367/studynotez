@@ -29,6 +29,14 @@ export interface ControlsProps {
   onLeaveCall: () => void;
 }
 
+export interface VideoCallControlsProps {
+  isDailyEnabled: boolean;
+  isZoomEnabled: boolean;
+  isZoomError: boolean;
+  onDailyStart: () => void;
+  onZoomStart: () => void;
+}
+
 export interface AudioLevelIndicatorProps {
   isAudioEnabled: boolean;
   audioLevel: number;

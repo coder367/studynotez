@@ -6,7 +6,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -46,7 +45,7 @@ serve(async (req) => {
     
     if (!response.ok) {
       console.error('Daily API error:', data)
-      throw new Error('Failed to create Daily room')
+      throw new Error(data.info || 'Failed to create Daily room')
     }
 
     console.log('Daily room created successfully:', data)
