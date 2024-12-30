@@ -10,7 +10,7 @@ import NotificationItem from "./NotificationItem";
 import NotificationHeader from "./NotificationHeader";
 import { useNotifications } from "./hooks/useNotifications";
 import { useNotificationActions } from "./hooks/useNotificationActions";
-import { NotificationType } from "@/types/notifications";
+import { NotificationType, isReadNotification } from "@/types/notifications";
 import { useToast } from "@/hooks/use-toast";
 
 const NotificationsMenu = () => {
@@ -63,7 +63,7 @@ const NotificationsMenu = () => {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read && !n.read_at).length;
+  const unreadCount = notifications.filter(n => !isReadNotification(n)).length;
 
   return (
     <div className="relative">
