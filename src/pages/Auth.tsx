@@ -21,9 +21,13 @@ const Auth = () => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          console.log("Existing session found:", session);
+        if (session?.user?.email_confirmed_at) {
+          console.log("User has confirmed email, redirecting to dashboard");
           navigate("/dashboard");
+        } else if (session?.user?.email) {
+          console.log("User email not confirmed, showing verification options");
+          setUserEmail(session.user.email);
+          setShowResendButton(true);
         }
       } catch (error) {
         console.error("Session check error:", error);
@@ -43,6 +47,17 @@ const Auth = () => {
       console.log("Auth state changed:", event, session);
       
       if (event === "SIGNED_IN") {
+        if (!session?.user.email_confirmed_at) {
+          console.log("Email not confirmed, showing verification options");
+          setUserEmail(session.user.email);
+          setShowResendButton(true);
+          toast({
+            title: "Email Verification Required",
+            description: "Please check your email and verify your account before signing in.",
+          });
+          return;
+        }
+
         if (session?.user.app_metadata.provider === "email") {
           setNewUserId(session.user.id);
           setShowProfileSetup(true);
@@ -62,10 +77,8 @@ const Auth = () => {
         });
       } else if (event === "USER_UPDATED") {
         console.log("User updated:", session);
-      } else if (event === "INITIAL_SESSION") {
-        if (session?.user.email) {
-          setUserEmail(session.user.email);
-          setShowResendButton(!session.user.email_confirmed_at);
+        if (session?.user.email_confirmed_at) {
+          navigate("/dashboard");
         }
       }
     });
@@ -122,7 +135,7 @@ const Auth = () => {
               },
             }}
             providers={["google"]}
-            redirectTo={window.location.origin + "/auth/callback"}
+            redirectTo={`${window.location.origin}/auth/callback`}
             localization={{
               variables: {
                 sign_up: {

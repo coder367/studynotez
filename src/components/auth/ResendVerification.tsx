@@ -11,16 +11,24 @@ export const ResendVerification = ({ userEmail, show }: ResendVerificationProps)
   const { toast } = useToast();
 
   const handleResendVerification = async () => {
-    if (!userEmail) return;
+    if (!userEmail) {
+      console.error("No email provided for verification");
+      return;
+    }
 
     try {
+      console.log("Attempting to resend verification email to:", userEmail);
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: userEmail,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error resending verification:", error);
+        throw error;
+      }
 
+      console.log("Verification email sent successfully");
       toast({
         title: "Verification email sent",
         description: "Please check your inbox for the verification link",
@@ -38,9 +46,9 @@ export const ResendVerification = ({ userEmail, show }: ResendVerificationProps)
   if (!show || !userEmail) return null;
 
   return (
-    <div className="text-center">
+    <div className="text-center mt-4">
       <p className="text-sm text-muted-foreground mb-2">
-        Didn't receive the verification email?
+        Haven't received the verification email?
       </p>
       <Button
         variant="outline"
