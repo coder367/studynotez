@@ -9,6 +9,7 @@ import { useWebRTC } from "./useWebRTC";
 import { useToast } from "@/hooks/use-toast";
 import { VideoGrid } from "./VideoGrid";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
@@ -31,47 +32,41 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   
   useWebRTC(roomId, localStream, addParticipant, removeParticipant);
 
-  const handleZoomStart = async () => {
-    try {
-      const { data: zoomConfig, error } = await supabase
-        .from('zoom_meetings')
-        .select('meeting_url, password')
-        .eq('room_id', roomId)
-        .maybeSingle();
+  const { data: zoomConfig } = useQuery({
+    queryKey: ["zoomMeeting", roomId],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('zoom_meetings')
+          .select('meeting_url, password')
+          .eq('room_id', roomId)
+          .maybeSingle();
 
-      if (error) {
-        console.error("Database error:", error);
-        throw new Error("Failed to fetch Zoom meeting details");
-      }
+        if (error) {
+          console.error("Database error:", error);
+          throw new Error("Failed to fetch Zoom meeting details");
+        }
 
-      if (zoomConfig) {
-        window.open(zoomConfig.meeting_url, '_blank');
-        setIsZoomEnabled(true);
-      } else {
-        toast({
-          title: "No Zoom Meeting Found",
-          description: "No Zoom meeting has been set up for this room yet.",
-          variant: "destructive",
-        });
+        return data;
+      } catch (error) {
+        console.error("Error fetching zoom meeting:", error);
+        return null;
       }
-    } catch (error: any) {
-      console.error("Error starting Zoom meeting:", error);
+    },
+  });
+
+  const handleZoomStart = () => {
+    if (zoomConfig?.meeting_url) {
+      window.open(zoomConfig.meeting_url, '_blank');
+      setIsZoomEnabled(true);
+    } else {
       toast({
-        title: "Error",
-        description: error.message || "Failed to start Zoom meeting",
+        title: "No Zoom Meeting Found",
+        description: "No Zoom meeting has been set up for this room yet.",
         variant: "destructive",
       });
     }
   };
-
-  useEffect(() => {
-    console.log("Initializing media stream");
-    initializeMedia();
-    return () => {
-      console.log("Cleaning up media stream");
-      stopAllTracks();
-    };
-  }, [isVoiceOnly, initializeMedia, stopAllTracks]);
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -90,6 +85,15 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
 
     fetchUserName();
   }, []);
+
+  useEffect(() => {
+    console.log("Initializing media stream");
+    initializeMedia();
+    return () => {
+      console.log("Cleaning up media stream");
+      stopAllTracks();
+    };
+  }, [isVoiceOnly, initializeMedia, stopAllTracks]);
 
   const handleLeaveCall = async () => {
     try {

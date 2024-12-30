@@ -3,6 +3,7 @@ import { Participant } from "@/types/video-call";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoGridProps {
   participants: Map<string, Participant>;
@@ -20,6 +21,7 @@ export const VideoGrid = ({
   isAudioEnabled 
 }: VideoGridProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -41,14 +43,30 @@ export const VideoGrid = ({
     queryKey: ["participantProfiles", participantIds],
     queryFn: async () => {
       if (participantIds.length === 0) return [];
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", participantIds);
-      return data || [];
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", participantIds);
+
+        if (error) {
+          console.error("Error fetching profiles:", error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch participant profiles",
+            variant: "destructive",
+          });
+          return [];
+        }
+
+        return data || [];
+      } catch (error) {
+        console.error("Error in profile fetch:", error);
+        return [];
+      }
     },
     enabled: participantIds.length > 0,
-    refetchInterval: 5000, // Refresh every 5 seconds to ensure names are up to date
+    refetchInterval: 5000,
   });
 
   // Create a map of user IDs to profile names
