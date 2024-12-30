@@ -59,7 +59,7 @@ const Auth = () => {
         console.log("Token refreshed successfully");
       } else if (event === "USER_UPDATED") {
         console.log("User updated:", session);
-      } else if (event === "SIGNED_UP") {
+      } else if (event === "EMAIL_SIGNUP") { // Changed from "SIGNED_UP" to "EMAIL_SIGNUP"
         setUserEmail(session?.user.email ?? null);
         setShowResendButton(true);
       }
