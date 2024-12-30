@@ -5,10 +5,18 @@ const HeroSection = () => {
   return (
     <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 animate-fade-up heading-gradient whitespace-pre-line leading-relaxed">
-          Share Notes Connect{'\n'}
-          Excel{'\n'}
-          Together
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 animate-fade-up">
+          <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 bg-clip-text text-transparent">
+            Share Notes
+          </span>
+          <br />
+          <span className="bg-gradient-to-r from-indigo-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+            Connect
+          </span>
+          <br />
+          <span className="bg-gradient-to-r from-purple-400 via-indigo-500 to-blue-600 bg-clip-text text-transparent">
+            Excel Together
+          </span>
         </h1>
         <p className="text-xl text-muted-foreground mb-12 animate-fade-up delay-100 max-w-2xl mx-auto">
           The ultimate platform for students to share notes, join study groups,

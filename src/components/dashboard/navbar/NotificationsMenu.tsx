@@ -10,13 +10,14 @@ import NotificationItem from "./NotificationItem";
 import NotificationHeader from "./NotificationHeader";
 import { useNotifications } from "./hooks/useNotifications";
 import { useNotificationActions } from "./hooks/useNotificationActions";
-import { NotificationType, isReadNotification } from "@/types/notifications";
+import { NotificationType, isReadNotification, isMessageNotification } from "@/types/notifications";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: internalToast } = useToast();
   const { data: notifications = [], refetch, isLoading } = useNotifications();
   const { markAllAsRead, handleNotificationClick: handleClick } = useNotificationActions(refetch);
 
@@ -24,7 +25,7 @@ const NotificationsMenu = () => {
     try {
       await handleClick(notification);
       
-      if (notification.type === "new_message") {
+      if (isMessageNotification(notification)) {
         navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
         setIsOpen(false);
       } else if (notification.type === "new_note") {
@@ -32,11 +33,10 @@ const NotificationsMenu = () => {
         setIsOpen(false);
       }
       
-      // Force refetch after handling the click
       await refetch();
     } catch (error) {
       console.error("Error handling notification click:", error);
-      toast({
+      internalToast({
         title: "Error",
         description: "Failed to process notification",
         variant: "destructive",
@@ -47,19 +47,11 @@ const NotificationsMenu = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead();
-      // After marking all as read, force a refetch to update the UI
       await refetch();
-      toast({
-        title: "Success",
-        description: "All notifications marked as read",
-      });
+      toast.success("All notifications marked as read");
     } catch (error) {
       console.error("Error marking all as read:", error);
-      toast({
-        title: "Error",
-        description: "Failed to mark notifications as read",
-        variant: "destructive",
-      });
+      toast.error("Failed to mark notifications as read");
     }
   };
 
