@@ -8,22 +8,14 @@ import { useRoomPresence } from "./useRoomPresence";
 import { useWebRTC } from "./useWebRTC";
 import { useToast } from "@/hooks/use-toast";
 import { VideoGrid } from "./VideoGrid";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { useDailyCall } from "./useDailyCall";
-import { VideoCallControls } from "./VideoCallControls";
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userName, setUserName] = useState<string>("");
   const [isZoomEnabled, setIsZoomEnabled] = useState(false);
-  
-  const { 
-    isDailyEnabled,
-    dailyCall,
-    handleDailyStart,
-    cleanup: cleanupDaily
-  } = useDailyCall();
   
   const { 
     localStream,
@@ -43,14 +35,23 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const { data: zoomConfig, isError: isZoomError } = useQuery({
     queryKey: ["zoomMeeting", roomId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('zoom_meetings')
-        .select('meeting_url, password')
-        .eq('room_id', roomId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('zoom_meetings')
+          .select('meeting_url, password')
+          .eq('room_id', roomId)
+          .maybeSingle();
 
-      if (error) throw error;
-      return data;
+        if (error) {
+          console.error("Database error:", error);
+          throw new Error("Failed to fetch Zoom meeting details");
+        }
+
+        return data;
+      } catch (error) {
+        console.error("Error fetching zoom meeting:", error);
+        throw error;
+      }
     },
     retry: 1,
     meta: {
@@ -65,21 +66,39 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   });
 
   const handleZoomStart = () => {
-    if (!zoomConfig?.meeting_url) {
+    if (!zoomConfig) {
       toast({
         title: "No Zoom Meeting Found",
-        description: "No Zoom meeting has been set up for this room yet.",
+        description: "No Zoom meeting has been set up for this room yet. Please contact the room administrator.",
         variant: "destructive",
       });
       return;
     }
 
-    window.open(zoomConfig.meeting_url, '_blank');
-    setIsZoomEnabled(true);
-    toast({
-      title: "Zoom Meeting Started",
-      description: "The Zoom meeting has been opened in a new tab.",
-    });
+    if (!zoomConfig.meeting_url) {
+      toast({
+        title: "Invalid Meeting URL",
+        description: "The Zoom meeting URL is invalid. Please contact the room administrator.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      window.open(zoomConfig.meeting_url, '_blank');
+      setIsZoomEnabled(true);
+      toast({
+        title: "Zoom Meeting Started",
+        description: "The Zoom meeting has been opened in a new tab.",
+      });
+    } catch (error) {
+      console.error("Error opening Zoom meeting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open Zoom meeting. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -106,14 +125,12 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     return () => {
       console.log("Cleaning up media stream");
       stopAllTracks();
-      cleanupDaily();
     };
-  }, [isVoiceOnly, initializeMedia, stopAllTracks, cleanupDaily]);
+  }, [isVoiceOnly, initializeMedia, stopAllTracks]);
 
   const handleLeaveCall = async () => {
     try {
       stopAllTracks();
-      cleanupDaily();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
@@ -134,13 +151,15 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <VideoCallControls
-        isDailyEnabled={isDailyEnabled}
-        isZoomEnabled={isZoomEnabled}
-        isZoomError={isZoomError}
-        onDailyStart={() => handleDailyStart(roomId)}
-        onZoomStart={handleZoomStart}
-      />
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          onClick={handleZoomStart}
+          disabled={isZoomEnabled || isZoomError}
+        >
+          {isZoomEnabled ? "Zoom Meeting Active" : "Start Zoom Meeting"}
+        </Button>
+      </div>
 
       <VideoGrid
         participants={participants}
