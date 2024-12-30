@@ -54,13 +54,14 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
       }
     },
     retry: 1,
-    onError: (error) => {
-      console.error("Error in zoom meeting query:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch Zoom meeting details. Please try again later.",
-        variant: "destructive",
-      });
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to fetch Zoom meeting details. Please try again later.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
