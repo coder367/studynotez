@@ -1,41 +1,39 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
-const HeroSection = () => {
+export const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto text-center">
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 animate-fade-up leading-tight">
-          <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-600 bg-clip-text text-transparent">
-            Share Notes &
-          </span>
-          <br />
-          <span className="bg-gradient-to-r from-indigo-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-            Excel Together
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8 animate-fade-up leading-tight max-w-4xl mx-auto">
+          <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            Share Notes & Excel Together
           </span>
         </h1>
-        <p className="text-xl text-muted-foreground mb-12 animate-fade-up delay-100 max-w-2xl mx-auto">
-          The ultimate platform for students to share notes, join study groups,
-          and collaborate in real-time.
+        
+        <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+          Connect with fellow students, share study materials, and collaborate in real-time study rooms.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-up delay-200">
-          <Link 
-            to="/auth" 
-            className="btn-primary flex items-center justify-center gap-2 hover:scale-105 transition-transform"
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            size="lg"
+            onClick={() => navigate("/auth")}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
           >
             Get Started
-            <ArrowRight className="h-5 w-5" />
-          </Link>
-          <Link 
-            to="#features" 
-            className="btn-secondary hover:scale-105 transition-transform"
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => navigate("/auth")}
           >
             Learn More
-          </Link>
+          </Button>
         </div>
       </div>
     </section>
   );
 };
-
-export default HeroSection;

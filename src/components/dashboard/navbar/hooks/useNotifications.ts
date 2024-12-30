@@ -37,11 +37,26 @@ export const useNotifications = () => {
         },
         (payload) => {
           const newNotification = payload.new as NotificationType;
-          toast(newNotification.type === "new_message" ? "New Message" : "New Notification", {
-            description: newNotification.data?.message || "You have a new notification",
+          
+          // Show toast notification based on type
+          const title = newNotification.type === "new_message" 
+            ? "New Message" 
+            : newNotification.type === "new_follower"
+            ? "New Follower"
+            : "New Notification";
+            
+          const description = newNotification.type === "new_message"
+            ? newNotification.data?.message || "You have a new message"
+            : newNotification.type === "new_follower"
+            ? "Someone started following you"
+            : newNotification.data?.message || "You have a new notification";
+
+          toast(title, {
+            description: description,
             position: "bottom-right",
             duration: 4000,
           });
+          
           refetch();
         }
       )
