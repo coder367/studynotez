@@ -10,12 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { VideoGrid } from "./VideoGrid";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import DailyIframe from '@daily-co/daily-js';
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userName, setUserName] = useState<string>("");
   const [isZoomEnabled, setIsZoomEnabled] = useState(false);
+  const [dailyRoom, setDailyRoom] = useState<any>(null);
+  const [isDailyEnabled, setIsDailyEnabled] = useState(false);
   
   const { 
     localStream,
@@ -64,6 +67,52 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
       }
     }
   });
+
+  const handleDailyStart = async () => {
+    try {
+      // Create Daily.co room
+      const { data, error } = await supabase.functions.invoke('create-daily-room', {
+        body: { roomName: `study-${roomId}` }
+      });
+
+      if (error) throw error;
+
+      // Initialize Daily.co iframe
+      const dailyFrame = await DailyIframe.createFrame({
+        iframeStyle: {
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          zIndex: 999
+        },
+        showLeaveButton: true,
+        showFullscreenButton: true,
+      });
+
+      dailyFrame.join({ url: data.url });
+      
+      setDailyRoom(dailyFrame);
+      setIsDailyEnabled(true);
+
+      // Handle leave event
+      dailyFrame.on('left-meeting', () => {
+        dailyFrame.destroy();
+        setDailyRoom(null);
+        setIsDailyEnabled(false);
+      });
+
+    } catch (error) {
+      console.error("Error starting Daily.co meeting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start video call. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleZoomStart = () => {
     if (!zoomConfig) {
@@ -125,12 +174,18 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     return () => {
       console.log("Cleaning up media stream");
       stopAllTracks();
+      if (dailyRoom) {
+        dailyRoom.destroy();
+      }
     };
   }, [isVoiceOnly, initializeMedia, stopAllTracks]);
 
   const handleLeaveCall = async () => {
     try {
       stopAllTracks();
+      if (dailyRoom) {
+        dailyRoom.destroy();
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
@@ -151,7 +206,14 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <Button
+          variant="outline"
+          onClick={handleDailyStart}
+          disabled={isDailyEnabled}
+        >
+          {isDailyEnabled ? "Video Call Active" : "Start Video Call"}
+        </Button>
         <Button
           variant="outline"
           onClick={handleZoomStart}
@@ -161,22 +223,26 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         </Button>
       </div>
 
-      <VideoGrid
-        participants={participants}
-        localStream={localStream}
-        userName={userName}
-        audioLevel={audioLevel}
-        isAudioEnabled={isAudioEnabled}
-      />
+      {!isDailyEnabled && (
+        <>
+          <VideoGrid
+            participants={participants}
+            localStream={localStream}
+            userName={userName}
+            audioLevel={audioLevel}
+            isAudioEnabled={isAudioEnabled}
+          />
 
-      <Controls
-        isVoiceOnly={isVoiceOnly}
-        isAudioEnabled={isAudioEnabled}
-        isVideoEnabled={isVideoEnabled}
-        onToggleAudio={toggleAudio}
-        onToggleVideo={toggleVideo}
-        onLeaveCall={handleLeaveCall}
-      />
+          <Controls
+            isVoiceOnly={isVoiceOnly}
+            isAudioEnabled={isAudioEnabled}
+            isVideoEnabled={isVideoEnabled}
+            onToggleAudio={toggleAudio}
+            onToggleVideo={toggleVideo}
+            onLeaveCall={handleLeaveCall}
+          />
+        </>
+      )}
     </div>
   );
 };
