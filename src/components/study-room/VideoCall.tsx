@@ -32,7 +32,7 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   
   useWebRTC(roomId, localStream, addParticipant, removeParticipant);
 
-  const { data: zoomConfig } = useQuery({
+  const { data: zoomConfig, isError: isZoomError } = useQuery({
     queryKey: ["zoomMeeting", roomId],
     queryFn: async () => {
       try {
@@ -50,19 +50,51 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         return data;
       } catch (error) {
         console.error("Error fetching zoom meeting:", error);
-        return null;
+        throw error;
       }
     },
+    retry: 1,
+    onError: (error) => {
+      console.error("Error in zoom meeting query:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch Zoom meeting details. Please try again later.",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleZoomStart = () => {
-    if (zoomConfig?.meeting_url) {
-      window.open(zoomConfig.meeting_url, '_blank');
-      setIsZoomEnabled(true);
-    } else {
+    if (!zoomConfig) {
       toast({
         title: "No Zoom Meeting Found",
-        description: "No Zoom meeting has been set up for this room yet.",
+        description: "No Zoom meeting has been set up for this room yet. Please contact the room administrator.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!zoomConfig.meeting_url) {
+      toast({
+        title: "Invalid Meeting URL",
+        description: "The Zoom meeting URL is invalid. Please contact the room administrator.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      window.open(zoomConfig.meeting_url, '_blank');
+      setIsZoomEnabled(true);
+      toast({
+        title: "Zoom Meeting Started",
+        description: "The Zoom meeting has been opened in a new tab.",
+      });
+    } catch (error) {
+      console.error("Error opening Zoom meeting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open Zoom meeting. Please try again.",
         variant: "destructive",
       });
     }
@@ -122,7 +154,7 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
         <Button
           variant="outline"
           onClick={handleZoomStart}
-          disabled={isZoomEnabled}
+          disabled={isZoomEnabled || isZoomError}
         >
           {isZoomEnabled ? "Zoom Meeting Active" : "Start Zoom Meeting"}
         </Button>
