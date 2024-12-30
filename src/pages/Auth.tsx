@@ -21,6 +21,8 @@ const Auth = () => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("Current session:", session);
+        
         if (session?.user?.email_confirmed_at) {
           console.log("User has confirmed email, redirecting to dashboard");
           navigate("/dashboard");
@@ -28,6 +30,10 @@ const Auth = () => {
           console.log("User email not confirmed, showing verification options");
           setUserEmail(session.user.email);
           setShowResendButton(true);
+          toast({
+            title: "Email Verification Required",
+            description: "Please check your email and verify your account before signing in.",
+          });
         }
       } catch (error) {
         console.error("Session check error:", error);
