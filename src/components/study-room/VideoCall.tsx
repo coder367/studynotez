@@ -10,12 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { VideoGrid } from "./VideoGrid";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import DailyIframe from '@daily-co/daily-js';
 
 const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userName, setUserName] = useState<string>("");
   const [isZoomEnabled, setIsZoomEnabled] = useState(false);
+  const [isDailyEnabled, setIsDailyEnabled] = useState(false);
+  const [dailyCall, setDailyCall] = useState<any>(null);
   
   const { 
     localStream,
@@ -64,6 +67,49 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
       }
     }
   });
+
+  const handleDailyStart = async () => {
+    try {
+      const response = await supabase.functions.invoke('create-daily-room', {
+        body: { roomName: `${roomId}-${Date.now()}` },
+      });
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      const { url } = response.data;
+      const callFrame = DailyIframe.createFrame({
+        url,
+        showLeaveButton: true,
+        iframeStyle: {
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          zIndex: '999',
+        },
+      });
+
+      callFrame.join();
+      setDailyCall(callFrame);
+      setIsDailyEnabled(true);
+
+      toast({
+        title: "Success",
+        description: "Daily.co video call started successfully",
+      });
+    } catch (error) {
+      console.error("Error starting Daily call:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start Daily.co video call. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleZoomStart = () => {
     if (!zoomConfig) {
@@ -125,12 +171,18 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
     return () => {
       console.log("Cleaning up media stream");
       stopAllTracks();
+      if (dailyCall) {
+        dailyCall.destroy();
+      }
     };
-  }, [isVoiceOnly, initializeMedia, stopAllTracks]);
+  }, [isVoiceOnly, initializeMedia, stopAllTracks, dailyCall]);
 
   const handleLeaveCall = async () => {
     try {
       stopAllTracks();
+      if (dailyCall) {
+        dailyCall.destroy();
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
@@ -151,7 +203,14 @@ const VideoCall = ({ roomId, isVoiceOnly = false }: VideoCallProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-4 mb-4">
+        <Button
+          variant="outline"
+          onClick={handleDailyStart}
+          disabled={isDailyEnabled}
+        >
+          {isDailyEnabled ? "Daily Call Active" : "Start Daily Call"}
+        </Button>
         <Button
           variant="outline"
           onClick={handleZoomStart}
