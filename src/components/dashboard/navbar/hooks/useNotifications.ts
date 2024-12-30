@@ -22,7 +22,7 @@ export const useNotifications = () => {
             )
           `)
           .eq("user_id", user.id)
-          .eq("read", false) // Only fetch unread notifications
+          .eq("read", false)
           .order("created_at", { ascending: false }),
         supabase
           .from("messages")
@@ -34,7 +34,7 @@ export const useNotifications = () => {
             )
           `)
           .eq("receiver_id", user.id)
-          .is("read_at", null) // Only fetch unread messages
+          .is("read_at", null)
           .order("created_at", { ascending: false })
       ]);
 
@@ -75,7 +75,7 @@ export const useNotifications = () => {
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     },
-    refetchInterval: 10000, // Refetch every 10 seconds
-    staleTime: 5000, // Consider data stale after 5 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
+    staleTime: 3000, // Consider data stale after 3 seconds
   });
 };

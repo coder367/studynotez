@@ -14,9 +14,10 @@ const Auth = () => {
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [newUserId, setNewUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [showResendButton, setShowResendButton] = useState(false);
 
   useEffect(() => {
-    // Check for existing session first
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -58,6 +59,9 @@ const Auth = () => {
         console.log("Token refreshed successfully");
       } else if (event === "USER_UPDATED") {
         console.log("User updated:", session);
+      } else if (event === "SIGNED_UP") {
+        setUserEmail(session?.user.email ?? null);
+        setShowResendButton(true);
       }
     });
 
@@ -65,6 +69,31 @@ const Auth = () => {
       subscription.unsubscribe();
     };
   }, [navigate, toast]);
+
+  const handleResendVerification = async () => {
+    if (!userEmail) return;
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Verification email sent",
+        description: "Please check your inbox for the verification link",
+      });
+    } catch (error: any) {
+      console.error("Error resending verification:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to resend verification email",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -151,6 +180,21 @@ const Auth = () => {
               },
             }}
           />
+
+          {showResendButton && userEmail && (
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-2">
+                Didn't receive the verification email?
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleResendVerification}
+                className="w-full"
+              >
+                Resend Verification Email
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
