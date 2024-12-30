@@ -85,12 +85,13 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-3/5 bg-primary/10">
+      <div className="hidden lg:flex lg:w-3/5 bg-primary/5">
         <div className="w-full h-full relative">
           <img
-            src="/lovable-uploads/7a435b7c-c19c-4435-9492-b8a2efa31866.png"
-            alt="Student studying with headphones"
-            className="absolute inset-0 w-full h-full object-cover"
+            src="/lovable-uploads/2651af33-462f-42d5-b1cc-e6a55e16764d.png"
+            alt="Student studying with laptop and books"
+            className="absolute inset-0 w-full h-full object-contain p-8"
+            style={{ imageRendering: 'crisp-edges' }}
           />
         </div>
       </div>
@@ -121,7 +122,7 @@ const Auth = () => {
               },
             }}
             providers={["google"]}
-            redirectTo={`${window.location.origin}/auth/callback`}
+            redirectTo={window.location.origin + "/auth/callback"}
             localization={{
               variables: {
                 sign_up: {
