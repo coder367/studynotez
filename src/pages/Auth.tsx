@@ -63,8 +63,10 @@ const Auth = () => {
       } else if (event === "USER_UPDATED") {
         console.log("User updated:", session);
       } else if (event === "INITIAL_SESSION") {
-        setUserEmail(session?.user.email ?? null);
-        setShowResendButton(true);
+        if (session?.user.email) {
+          setUserEmail(session.user.email);
+          setShowResendButton(!session.user.email_confirmed_at);
+        }
       }
     });
 
@@ -120,6 +122,24 @@ const Auth = () => {
             }}
             providers={["google"]}
             redirectTo={`${window.location.origin}/auth/callback`}
+            onError={(error) => {
+              console.error("Auth error:", error);
+              if (error.message.includes("Email not confirmed")) {
+                toast({
+                  variant: "destructive",
+                  title: "Email Not Verified",
+                  description: "Please verify your email before signing in. Check your inbox for the verification link.",
+                });
+                setUserEmail(error.email);
+                setShowResendButton(true);
+              } else {
+                toast({
+                  variant: "destructive",
+                  title: "Error",
+                  description: error.message,
+                });
+              }
+            }}
             localization={{
               variables: {
                 sign_up: {
