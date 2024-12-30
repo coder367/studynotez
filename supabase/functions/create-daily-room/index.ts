@@ -34,7 +34,6 @@ serve(async (req) => {
         properties: {
           enable_chat: true,
           enable_screenshare: true,
-          enable_recording: "cloud",
           start_video_off: false,
           start_audio_off: false,
         },
