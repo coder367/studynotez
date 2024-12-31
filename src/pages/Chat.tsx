@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatContainer } from "@/components/chat/ChatContainer";
-import { PremiumFeatureGuard } from "@/components/premium/PremiumFeatureGuard";
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -45,36 +44,34 @@ const Chat = () => {
   }, [searchParams]);
 
   return (
-    <PremiumFeatureGuard>
-      <div className="h-screen flex">
-        <ChatSidebar 
-          users={[]}
-          activeChat={activeChat}
-          onChatSelect={setActiveChat}
-          currentUserId={currentUser}
-        />
+    <div className="h-screen flex">
+      <ChatSidebar 
+        users={[]}
+        activeChat={activeChat}
+        onChatSelect={setActiveChat}
+        currentUserId={currentUser}
+      />
 
-        <div className="flex-1 flex flex-col">
-          <div className="border-b p-4 flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/dashboard")}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="font-semibold">
-              {activeChat === "public"
-                ? "Public Chat"
-                : (activeChat as any)?.full_name || "Select a chat"}
-            </h2>
-          </div>
-          
-          <ChatContainer activeChat={activeChat} currentUser={currentUser} />
+      <div className="flex-1 flex flex-col">
+        <div className="border-b p-4 flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/dashboard")}
+            className="mr-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="font-semibold">
+            {activeChat === "public"
+              ? "Public Chat"
+              : (activeChat as any)?.full_name || "Select a chat"}
+          </h2>
         </div>
+        
+        <ChatContainer activeChat={activeChat} currentUser={currentUser} />
       </div>
-    </PremiumFeatureGuard>
+    </div>
   );
 };
 

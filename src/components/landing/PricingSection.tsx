@@ -8,8 +8,8 @@ const pricingPlans = [
     price: "0",
     featured: false,
     features: [
-      "Access to all notes",
-      "Basic note organization",
+      "Up to 5 study groups",
+      "Basic note sharing",
       "Community support",
       "Email support",
     ],
@@ -17,14 +17,27 @@ const pricingPlans = [
   {
     name: "Pro",
     description: "Best for active students",
-    price: "20",
+    price: "19",
     featured: true,
     features: [
-      "Everything in Basic",
-      "Access to chat feature",
-      "Access to study rooms",
-      "Live study sessions",
+      "Unlimited study groups",
+      "Advanced note organization",
       "Priority support",
+      "Live study sessions",
+      "AI study assistance",
+    ],
+  },
+  {
+    name: "Enterprise",
+    description: "For educational institutions",
+    price: "99",
+    featured: false,
+    features: [
+      "Custom user limits",
+      "Advanced analytics",
+      "Dedicated support",
+      "Custom integrations",
+      "SLA guarantee",
     ],
   },
 ];
@@ -34,9 +47,9 @@ const PricingSection = () => {
     <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 scroll-mt-16">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-16 heading-gradient">
-          Choose Your Study Plan
+          Simple, Transparent Pricing
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {pricingPlans.map((plan) => (
             <div
               key={plan.name}
@@ -71,7 +84,7 @@ const PricingSection = () => {
                     : "border border-primary text-primary hover:bg-primary/10"
                 }`}
               >
-                Get Started
+                {plan.featured ? "Get Started" : "Contact Sales"}
               </Link>
             </div>
           ))}

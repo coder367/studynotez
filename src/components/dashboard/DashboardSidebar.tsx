@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookOpen, MessageSquare, Users, User, CreditCard } from "lucide-react";
+import { BookOpen, MessageSquare, Users, User } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -38,14 +38,6 @@ const DashboardSidebar = () => {
                   <Link to="/dashboard/study-room" className="flex items-center gap-4 rounded-lg px-6 py-4 text-lg text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
                     <Users className="h-8 w-8" />
                     <span>Study Room</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem className="list-none">
-                <SidebarMenuButton asChild>
-                  <Link to="/dashboard/pricing" className="flex items-center gap-4 rounded-lg px-6 py-4 text-lg text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <CreditCard className="h-8 w-8" />
-                    <span>Pricing</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

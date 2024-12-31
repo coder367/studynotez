@@ -393,36 +393,6 @@ export type Database = {
           },
         ]
       }
-      subscriptions: {
-        Row: {
-          created_at: string
-          current_period_end: string
-          current_period_start: string
-          id: string
-          plan_type: string
-          status: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_period_end: string
-          current_period_start?: string
-          id?: string
-          plan_type: string
-          status?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_period_end?: string
-          current_period_start?: string
-          id?: string
-          plan_type?: string
-          status?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       zoom_meetings: {
         Row: {
           created_at: string
