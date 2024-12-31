@@ -29,6 +29,9 @@ export const usePeerConnections = (
 
     const handleConnectionStateChange = async () => {
       console.log(`Connection state changed for peer ${peerId}:`, peerConnection.connectionState);
+      console.log('ICE gathering state:', peerConnection.iceGatheringState);
+      console.log('ICE connection state:', peerConnection.iceConnectionState);
+      console.log('Signaling state:', peerConnection.signalingState);
       
       if (['failed', 'closed', 'disconnected'].includes(peerConnection.connectionState)) {
         const attempts = reconnectionAttempts.current.get(peerId) || 0;
@@ -88,6 +91,8 @@ export const usePeerConnections = (
           type: event.candidate.type,
           protocol: event.candidate.protocol,
           address: event.candidate.address,
+          port: event.candidate.port,
+          priority: event.candidate.priority,
         });
         
         const { data: { user } } = await supabase.auth.getUser();

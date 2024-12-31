@@ -1,5 +1,6 @@
 export const getRTCConfiguration = (): RTCConfiguration => ({
   iceServers: [
+    // Google's public STUN servers
     {
       urls: [
         'stun:stun1.l.google.com:19302',
