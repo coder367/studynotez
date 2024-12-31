@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -25,10 +25,15 @@ const NotificationsMenu = () => {
     await refetch();
   });
 
+  // Update unread count when notifications data changes
+  useEffect(() => {
+    setUnreadCount(notifications.filter(n => !isReadNotification(n)).length);
+  }, [notifications]);
+
   const handleNotificationClick = async (notification: NotificationType) => {
     try {
       await handleClick(notification);
-      
+
       if (isMessageNotification(notification)) {
         navigate(`/dashboard/chat?user=${notification.data.sender_id}`);
         setIsOpen(false);
@@ -36,7 +41,7 @@ const NotificationsMenu = () => {
         navigate(`/dashboard/notes?note=${notification.data.note_id}`);
         setIsOpen(false);
       }
-      
+
       await refetch();
     } catch (error) {
       console.error("Error handling notification click:", error);
@@ -81,7 +86,7 @@ const NotificationsMenu = () => {
   return (
     <div className="relative">
       <NotificationBadge 
-        unreadCount={unreadCount || notifications.filter(n => !isReadNotification(n)).length} 
+        unreadCount={unreadCount}
         onClick={() => handleOpenChange(true)} 
       />
 
