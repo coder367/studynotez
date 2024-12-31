@@ -18,7 +18,6 @@ import { supabase } from "@/integrations/supabase/client";
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [readNotificationIds, setReadNotificationIds] = useState(new Set());
   const navigate = useNavigate();
   const { toast: internalToast } = useToast();
   const { data: notifications = [], refetch, isLoading } = useNotifications();
@@ -26,12 +25,10 @@ const NotificationsMenu = () => {
     await refetch();
   });
 
+  // Update unread count when notifications data changes
   useEffect(() => {
-    const newUnreadCount = notifications.filter(
-      (n) => !isReadNotification(n) && !readNotificationIds.has(n.id)
-    ).length;
-    setUnreadCount(newUnreadCount);
-  }, [notifications, readNotificationIds]);
+    setUnreadCount(notifications.filter(n => !isReadNotification(n)).length);
+  }, [notifications]);
 
   const handleNotificationClick = async (notification: NotificationType) => {
     try {
@@ -70,22 +67,16 @@ const NotificationsMenu = () => {
   const handleOpenChange = async (open: boolean) => {
     setIsOpen(open);
     if (open) {
+      setUnreadCount(0);
       try {
-        const unreadNotifications = notifications.filter((n) => !isReadNotification(n));
-        const unreadIds = unreadNotifications.map((n) => n.id);
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .eq('read', false);
 
-        if (unreadIds.length > 0) {
-          const { error } = await supabase
-            .from("notifications")
-            .update({ read: true })
-            .in("id", unreadIds);
-
-          if (error) throw error;
-
-          setReadNotificationIds((prev) => new Set([...prev, ...unreadIds]));
-          setUnreadCount(0);
-          await refetch();
-        }
+        if (error) throw error;
+        await refetch();
       } catch (error) {
         console.error("Error marking notifications as read:", error);
       }
