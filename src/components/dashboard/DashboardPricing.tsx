@@ -112,33 +112,35 @@ const DashboardPricing = () => {
               <h1 className="text-2xl font-bold">Pricing Plans</h1>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-[1200px] mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[900px] mx-auto px-4">
               {pricingPlans.map((plan) => (
                 <Card
                   key={plan.name}
-                  className={`p-8 rounded-xl glass-card transition-all duration-300 hover:scale-105 ${
+                  className={`p-6 rounded-xl glass-card transition-all duration-300 hover:scale-105 aspect-[4/5] flex flex-col justify-between ${
                     plan.featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
                   }`}
                 >
-                  {plan.featured && (
-                    <span className="bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-medium mb-4 inline-block">
-                      Most Popular
-                    </span>
-                  )}
-                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                  <p className="text-muted-foreground mb-4">{plan.description}</p>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold">${plan.price}</span>
-                    <span className="text-muted-foreground">/month</span>
+                  <div>
+                    {plan.featured && (
+                      <span className="bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-medium mb-4 inline-block">
+                        Most Popular
+                      </span>
+                    )}
+                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                    <p className="text-muted-foreground mb-4">{plan.description}</p>
+                    <div className="mb-4">
+                      <span className="text-4xl font-bold">${plan.price}</span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
+                    <ul className="space-y-2 mb-6">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-center text-muted-foreground">
+                          <Check className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-center text-muted-foreground">
-                        <Check className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
                   {selectedPlan === plan.name ? (
                     <PayPalButton
                       amount={plan.price}
@@ -149,8 +151,9 @@ const DashboardPricing = () => {
                       className="w-full py-6"
                       variant={plan.featured ? "default" : "outline"}
                       onClick={() => handleSubscribe(plan.name)}
+                      disabled={plan.price === "0"}
                     >
-                      {plan.price === "0" ? "Get Started" : "Subscribe Now"}
+                      {plan.price === "0" ? "Current Plan" : "Subscribe Now"}
                     </Button>
                   )}
                 </Card>
