@@ -9,8 +9,6 @@ import RoomCard from "@/components/study-room/RoomCard";
 import { CreateRoomForm } from "@/components/study-room/CreateRoomForm";
 import type { StudyRoom } from "@/types/study-room";
 
-const ADMIN_ID = "your-user-id-here"; // Replace this with your actual Supabase user ID
-
 const StudyRoomPage = () => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -51,8 +49,9 @@ const StudyRoomPage = () => {
     return <div className="flex justify-center items-center h-[50vh]">Loading...</div>;
   }
 
-  // Show coming soon page for non-admin users
-  if (currentUser?.id !== ADMIN_ID) {
+  // Show coming soon page for non-editor users
+  const isEditor = currentUser?.email?.endsWith("@lovable.ai");
+  if (!isEditor) {
     return (
       <div className="container mx-auto py-6">
         <div className="flex items-center gap-4 mb-6">
