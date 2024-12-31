@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { PricingPlan } from "./pricing/PricingPlan";
 import { PayPalButton } from "./pricing/PayPalButton";
 
+declare global {
+  interface Window {
+    paypal?: any;
+  }
+}
+
 const pricingPlans = [
   {
     name: "Basic",
@@ -52,17 +58,7 @@ export const DashboardPricing = () => {
       setHasSubscription(!!subscription);
     };
 
-    // Load PayPal script
-    const script = document.createElement("script");
-    script.src = "https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD";
-    script.async = true;
-    document.body.appendChild(script);
-
     checkSubscription();
-
-    return () => {
-      document.body.removeChild(script);
-    };
   }, []);
 
   const handleSubscribe = async (planName: string) => {

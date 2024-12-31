@@ -6,7 +6,7 @@ interface PayPalButtonProps {
 
 declare global {
   interface Window {
-    paypal: any;
+    paypal?: any;
   }
 }
 
