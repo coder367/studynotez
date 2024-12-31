@@ -5,6 +5,13 @@ import { Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+// Add PayPal type definition
+declare global {
+  interface Window {
+    paypal: any;
+  }
+}
+
 const pricingPlans = [
   {
     name: "Basic",
@@ -97,14 +104,18 @@ export const DashboardPricing = () => {
             onApprove: async (data: any, actions: any) => {
               const order = await actions.order.capture();
               
-              // Create subscription record
+              // Create subscription record with proper date format
+              const currentDate = new Date();
+              const endDate = new Date();
+              endDate.setDate(endDate.getDate() + 30); // 30 days from now
+
               const { error } = await supabase
                 .from('subscriptions')
                 .insert({
                   user_id: user.id,
                   plan_type: 'pro',
                   status: 'active',
-                  current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+                  current_period_end: endDate.toISOString(), // Convert to ISO string format
                 });
 
               if (error) throw error;
