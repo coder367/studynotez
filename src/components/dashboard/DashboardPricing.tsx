@@ -110,32 +110,30 @@ export const DashboardPricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-20">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4 heading-gradient">Choose Your Plan</h2>
-          <p className="text-muted-foreground">
-            Select the perfect plan for your study needs
-          </p>
-        </div>
+    <div className="container mx-auto py-6">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold mb-4 heading-gradient">Choose Your Plan</h2>
+        <p className="text-muted-foreground">
+          Select the perfect plan for your study needs
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {pricingPlans.map((plan) => (
-            <div key={plan.name} className="animate-fade-up">
-              <PricingPlan
-                {...plan}
-                onSubscribe={() => handleSubscribe(plan.name)}
-                disabled={hasSubscription || (plan.featured && showPayPal)}
-                buttonText={hasSubscription ? "Current Plan" : "Get Started"}
-              />
-              {plan.featured && showPayPal && !hasSubscription && (
-                <div className="mt-4">
-                  <PayPalButton onSuccess={handlePaymentSuccess} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {pricingPlans.map((plan) => (
+          <div key={plan.name} className="animate-fade-up">
+            <PricingPlan
+              {...plan}
+              onSubscribe={() => handleSubscribe(plan.name)}
+              disabled={hasSubscription || (plan.featured && showPayPal)}
+              buttonText={hasSubscription ? "Current Plan" : "Get Started"}
+            />
+            {plan.featured && showPayPal && !hasSubscription && (
+              <div className="mt-4">
+                <PayPalButton onSuccess={handlePaymentSuccess} />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
