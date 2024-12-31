@@ -45,7 +45,6 @@ const DashboardPricing = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Here we'll add PayPal payment flow
       toast({
         title: "Coming Soon",
         description: "PayPal integration is being set up. Please try again later.",
@@ -64,8 +63,8 @@ const DashboardPricing = () => {
       <div className="min-h-screen flex">
         <DashboardSidebar />
         <div className="flex-1">
-          <div className="p-6">
-            <div className="flex items-center mb-6">
+          <div className="p-6 max-w-7xl mx-auto">
+            <div className="flex items-center mb-8">
               <Button
                 variant="ghost"
                 onClick={() => navigate("/dashboard")}
@@ -77,11 +76,11 @@ const DashboardPricing = () => {
               <h1 className="text-2xl font-bold">Pricing Plans</h1>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {pricingPlans.map((plan) => (
                 <Card
                   key={plan.name}
-                  className={`p-8 rounded-xl transition-all duration-300 hover:scale-105 ${
+                  className={`p-8 rounded-xl glass-card transition-all duration-300 hover:scale-105 ${
                     plan.featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
                   }`}
                 >
@@ -96,16 +95,16 @@ const DashboardPricing = () => {
                     <span className="text-4xl font-bold">${plan.price}</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
-                  <ul className="space-y-3 mb-8">
+                  <ul className="space-y-4 mb-8">
                     {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <Check className="h-5 w-5 text-primary mr-2 flex-shrink-0" />
+                      <li key={index} className="flex items-center text-muted-foreground">
+                        <Check className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
                         <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
                   <Button
-                    className="w-full"
+                    className="w-full text-lg py-6"
                     variant={plan.featured ? "default" : "outline"}
                     onClick={() => handleSubscribe(plan.name)}
                   >
