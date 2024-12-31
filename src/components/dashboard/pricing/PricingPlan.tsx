@@ -25,7 +25,7 @@ export const PricingPlan = ({
 }: PricingPlanProps) => {
   return (
     <Card
-      className={`glass-card p-8 rounded-xl transition-all duration-300 hover:scale-105 ${
+      className={`p-8 rounded-xl transition-all duration-300 hover:scale-105 ${
         featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
       }`}
     >
