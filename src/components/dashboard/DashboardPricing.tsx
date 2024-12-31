@@ -142,21 +142,23 @@ const DashboardPricing = () => {
                       ))}
                     </ul>
                   </div>
-                  {selectedPlan === plan.name ? (
-                    <PayPalButton
-                      amount={plan.price}
-                      onSuccess={handlePaymentSuccess}
-                    />
-                  ) : (
-                    <Button
-                      className="w-full py-6"
-                      variant={plan.featured ? "default" : "outline"}
-                      onClick={() => handleSubscribe(plan.name)}
-                      disabled={plan.price === "0"}
-                    >
-                      {plan.price === "0" ? "Current Plan" : "Subscribe Now"}
-                    </Button>
-                  )}
+                  <div>
+                    {selectedPlan === plan.name ? (
+                      <PayPalButton
+                        amount={plan.price}
+                        onSuccess={handlePaymentSuccess}
+                      />
+                    ) : (
+                      <Button
+                        className="w-full py-6"
+                        variant={plan.featured ? "default" : "outline"}
+                        onClick={() => handleSubscribe(plan.name)}
+                        disabled={plan.price === "0"}
+                      >
+                        {plan.price === "0" ? "Current Plan" : "Subscribe Now"}
+                      </Button>
+                    )}
+                  </div>
                 </Card>
               ))}
             </div>

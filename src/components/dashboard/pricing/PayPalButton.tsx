@@ -63,7 +63,10 @@ export const PayPalButton = ({ amount, onSuccess }: PayPalButtonProps) => {
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      const paypalScript = document.querySelector(`script[src*="paypal"]`);
+      if (paypalScript) {
+        document.body.removeChild(paypalScript);
+      }
     };
   }, [amount, onSuccess, toast]);
 
