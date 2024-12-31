@@ -1,64 +1,58 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface PremiumFeatureGuardProps {
   children: React.ReactNode;
 }
 
 export const PremiumFeatureGuard = ({ children }: PremiumFeatureGuardProps) => {
-  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkSubscription = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/auth");
-          return;
-        }
-
-        const { data: subscription, error } = await supabase
-          .from("subscriptions")
-          .select()
-          .eq("user_id", user.id)
-          .eq("status", "active")
-          .maybeSingle();
-
-        if (error) throw error;
-        setHasSubscription(!!subscription);
-      } catch (error) {
-        console.error("Error checking subscription:", error);
-        toast({
-          title: "Error",
-          description: "Failed to verify subscription status",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
     };
+    getCurrentUser();
+  }, []);
 
-    checkSubscription();
-  }, [navigate, toast]);
+  const { data: subscription, isLoading } = useQuery({
+    queryKey: ["subscription", userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle();
+      
+      return subscription;
+    },
+    enabled: !!userId,
+  });
 
   if (isLoading) {
-    return <div className="flex justify-center items-center min-h-[200px]">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  if (!hasSubscription) {
+  if (!subscription) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8">
         <h2 className="text-2xl font-bold mb-4">Premium Feature</h2>
         <p className="text-muted-foreground mb-6 max-w-md">
-          This feature is only available to Pro plan subscribers. Upgrade your plan to access premium features.
+          This feature is only available to premium subscribers. Upgrade your plan to access premium features.
         </p>
-        <Button onClick={() => navigate("/auth")} className="w-full max-w-sm">
+        <Button onClick={() => navigate("/dashboard/pricing")} className="w-full max-w-sm">
           View Pricing Plans
         </Button>
       </div>
