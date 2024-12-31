@@ -38,8 +38,8 @@ const PricingSection = () => {
           {pricingPlans.map((plan) => (
             <div
               key={plan.name}
-              className={`glass-card p-8 rounded-xl animate-fade-up transition-transform ${
-                plan.featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
+              className={`p-8 rounded-xl animate-fade-up hover:scale-105 transition-transform duration-300 ${
+                plan.featured ? "border-2 border-primary ring-2 ring-primary/20 bg-background" : "bg-background"
               }`}
             >
               {plan.featured && (
