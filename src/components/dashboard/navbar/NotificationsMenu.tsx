@@ -13,6 +13,7 @@ import { useNotificationActions } from "./hooks/useNotificationActions";
 import { NotificationType, isReadNotification, isMessageNotification } from "@/types/notifications";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,16 +58,34 @@ const NotificationsMenu = () => {
     }
   };
 
+  const handleOpenChange = async (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .eq('read', false);
+
+        if (error) throw error;
+        await refetch();
+      } catch (error) {
+        console.error("Error marking notifications as read:", error);
+      }
+    }
+  };
+
   const unreadCount = notifications.filter(n => !isReadNotification(n)).length;
 
   return (
     <div className="relative">
       <NotificationBadge 
         unreadCount={unreadCount} 
-        onClick={() => setIsOpen(true)} 
+        onClick={() => handleOpenChange(true)} 
       />
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-md">
           <NotificationHeader 
             notificationCount={notifications.length}
