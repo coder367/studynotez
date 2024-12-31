@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const ContactForm = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
   const { toast } = useToast();
@@ -16,30 +17,33 @@ const ContactForm = ({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
     email: "",
     message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
-      // Create mailto link
-      const mailtoLink = `mailto:deepanshusharma9004@gmail.com?subject=Contact Form Submission&body=Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0AMessage: ${formData.message}`;
-      
-      // Open default email client
-      window.location.href = mailtoLink;
+      const { data: { origin } } = await supabase.functions.invoke("send-contact-email", {
+        body: formData,
+      });
       
       toast({
-        title: "Success!",
-        description: "Your default email client has been opened with the message.",
+        title: "Message sent!",
+        description: "Thank you for your feedback. We'll get back to you soon.",
       });
       
       onOpenChange(false);
       setFormData({ name: "", email: "", message: "" });
     } catch (error) {
+      console.error("Error sending message:", error);
       toast({
         title: "Error",
-        description: "There was an error opening your email client. Please try again.",
+        description: "There was an error sending your message. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -91,8 +95,8 @@ const ContactForm = ({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
             />
           </div>
-          <Button type="submit" className="w-full">
-            Send Message
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Sending..." : "Send Message"}
           </Button>
         </form>
       </DialogContent>
