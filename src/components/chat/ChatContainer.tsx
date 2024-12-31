@@ -81,7 +81,10 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
             upsert: false
           });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error('Failed to upload file');
+        }
 
         // Get the public URL
         const { data: { publicUrl } } = supabase.storage
@@ -103,11 +106,14 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
           file_type: fileType,
         });
 
-      if (messageError) throw messageError;
+      if (messageError) {
+        console.error('Message error:', messageError);
+        throw messageError;
+      }
 
       // Create notification for private messages
       if (activeChat !== "public") {
-        await supabase
+        const { error: notificationError } = await supabase
           .from("notifications")
           .insert({
             user_id: (activeChat as any).id,
@@ -117,6 +123,11 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
               message: message.trim()
             }
           });
+
+        if (notificationError) {
+          console.error('Notification error:', notificationError);
+          // Don't throw here as the message was sent successfully
+        }
       }
 
       setMessage("");
