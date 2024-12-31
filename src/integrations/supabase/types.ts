@@ -399,6 +399,8 @@ export type Database = {
           current_period_end: string
           current_period_start: string
           id: string
+          paypal_customer_id: string | null
+          paypal_transaction_id: string | null
           plan_type: string
           status: string
           user_id: string
@@ -408,6 +410,8 @@ export type Database = {
           current_period_end: string
           current_period_start?: string
           id?: string
+          paypal_customer_id?: string | null
+          paypal_transaction_id?: string | null
           plan_type: string
           status?: string
           user_id: string
@@ -417,6 +421,8 @@ export type Database = {
           current_period_end?: string
           current_period_start?: string
           id?: string
+          paypal_customer_id?: string | null
+          paypal_transaction_id?: string | null
           plan_type?: string
           status?: string
           user_id?: string

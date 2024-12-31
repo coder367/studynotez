@@ -27,33 +27,20 @@ const pricingPlans = [
       "AI study assistance",
     ],
   },
-  {
-    name: "Enterprise",
-    description: "For educational institutions",
-    price: "99",
-    featured: false,
-    features: [
-      "Custom user limits",
-      "Advanced analytics",
-      "Dedicated support",
-      "Custom integrations",
-      "SLA guarantee",
-    ],
-  },
 ];
 
 const PricingSection = () => {
   return (
     <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 scroll-mt-16">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-16 heading-gradient">
           Simple, Transparent Pricing
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {pricingPlans.map((plan) => (
             <div
               key={plan.name}
-              className={`glass-card p-8 rounded-xl animate-fade-up hover:scale-105 transition-transform ${
+              className={`glass-card p-8 rounded-xl animate-fade-up hover:scale-105 transition-transform aspect-square ${
                 plan.featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
               }`}
             >
@@ -84,7 +71,7 @@ const PricingSection = () => {
                     : "border border-primary text-primary hover:bg-primary/10"
                 }`}
               >
-                {plan.featured ? "Get Started" : "Contact Sales"}
+                {plan.featured ? "Get Started" : "Start Free"}
               </Link>
             </div>
           ))}
