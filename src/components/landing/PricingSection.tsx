@@ -21,10 +21,8 @@ const pricingPlans = [
     featured: true,
     features: [
       "Unlimited study groups",
-      "Advanced note organization",
       "Priority support",
       "Live study sessions",
-      "AI study assistance",
     ],
   },
 ];
@@ -40,7 +38,7 @@ const PricingSection = () => {
           {pricingPlans.map((plan) => (
             <div
               key={plan.name}
-              className={`glass-card p-8 rounded-xl animate-fade-up hover:scale-105 transition-transform aspect-square ${
+              className={`glass-card p-8 rounded-xl animate-fade-up transition-transform ${
                 plan.featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
               }`}
             >

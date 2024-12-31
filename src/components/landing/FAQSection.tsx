@@ -22,14 +22,6 @@ const faqs = [
     question: "Is my data secure?",
     answer: "Yes, we take security seriously. All data is encrypted, and we follow industry best practices to protect your information.",
   },
-  {
-    question: "Can I cancel my subscription anytime?",
-    answer: "Yes, you can cancel your subscription at any time. Your access will continue until the end of your billing period.",
-  },
-  {
-    question: "Do you offer student discounts?",
-    answer: "Yes! Students with a valid .edu email address can get 20% off the Pro plan. Contact our support team to learn more.",
-  },
 ];
 
 const FAQSection = () => {
