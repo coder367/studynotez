@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 
 const pricingPlans = [
   {
-    name: "Notes",
-    description: "Perfect for note-taking",
-    price: "10",
+    name: "Basic",
+    description: "Perfect for getting started",
+    price: "0",
     featured: false,
     features: [
       "Access to all notes",
@@ -15,29 +15,15 @@ const pricingPlans = [
     ],
   },
   {
-    name: "Chat",
-    description: "Connect with other students",
-    price: "15",
-    featured: false,
-    features: [
-      "Everything in Notes",
-      "Access to chat feature",
-      "Direct messaging",
-      "Group chats",
-      "File sharing",
-    ],
-  },
-  {
-    name: "Study Room",
+    name: "Pro",
     description: "Best for active students",
     price: "20",
     featured: true,
     features: [
-      "Everything in Chat",
+      "Everything in Basic",
+      "Access to chat feature",
       "Access to study rooms",
       "Live study sessions",
-      "Video conferencing",
-      "Screen sharing",
       "Priority support",
     ],
   },
@@ -50,7 +36,7 @@ const PricingSection = () => {
         <h2 className="text-3xl font-bold text-center mb-16 heading-gradient">
           Choose Your Study Plan
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {pricingPlans.map((plan) => (
             <div
               key={plan.name}

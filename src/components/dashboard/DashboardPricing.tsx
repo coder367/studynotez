@@ -35,6 +35,7 @@ const pricingPlans = [
 
 export const DashboardPricing = () => {
   const [hasSubscription, setHasSubscription] = useState<boolean>(false);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,6 +54,17 @@ export const DashboardPricing = () => {
     };
 
     checkSubscription();
+
+    // Load PayPal script
+    const script = document.createElement("script");
+    script.src = "https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD";
+    script.async = true;
+    script.onload = () => setPaypalLoaded(true);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   const handleSubscribe = async (planName: string) => {
@@ -64,16 +76,49 @@ export const DashboardPricing = () => {
       return;
     }
 
-    // Initialize PayPal payment
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Here we'll add PayPal payment flow
-      toast({
-        title: "Coming Soon",
-        description: "PayPal integration is being set up. Please try again later.",
-      });
+      // Initialize PayPal payment
+      if (window.paypal) {
+        const paypalButtonContainer = document.getElementById('paypal-button-container');
+        if (paypalButtonContainer) {
+          window.paypal.Buttons({
+            createOrder: (data: any, actions: any) => {
+              return actions.order.create({
+                purchase_units: [{
+                  amount: {
+                    value: '20.00'
+                  }
+                }]
+              });
+            },
+            onApprove: async (data: any, actions: any) => {
+              const order = await actions.order.capture();
+              
+              // Create subscription record
+              const { error } = await supabase
+                .from('subscriptions')
+                .insert({
+                  user_id: user.id,
+                  plan_type: 'pro',
+                  status: 'active',
+                  current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+                });
+
+              if (error) throw error;
+
+              toast({
+                title: "Success!",
+                description: "Your subscription has been activated.",
+              });
+              
+              setHasSubscription(true);
+            }
+          }).render(paypalButtonContainer);
+        }
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -119,18 +164,27 @@ export const DashboardPricing = () => {
                 </li>
               ))}
             </ul>
-            <Button
-              className="w-full"
-              variant={plan.featured ? "default" : "outline"}
-              onClick={() => handleSubscribe(plan.name)}
-              disabled={plan.name === "Basic" || (plan.name === "Pro" && hasSubscription)}
-            >
-              {plan.name === "Basic"
-                ? "Current Plan"
-                : hasSubscription
-                ? "Current Plan"
-                : "Subscribe Now"}
-            </Button>
+            {plan.featured && !hasSubscription && (
+              <div>
+                <Button
+                  className="w-full mb-4"
+                  variant={plan.featured ? "default" : "outline"}
+                  onClick={() => handleSubscribe(plan.name)}
+                >
+                  Subscribe Now
+                </Button>
+                <div id="paypal-button-container" className="mt-4"></div>
+              </div>
+            )}
+            {(!plan.featured || hasSubscription) && (
+              <Button
+                className="w-full"
+                variant={plan.featured ? "default" : "outline"}
+                disabled={true}
+              >
+                Current Plan
+              </Button>
+            )}
           </Card>
         ))}
       </div>
