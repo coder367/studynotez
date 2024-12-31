@@ -8,7 +8,6 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import RecentNotes from "@/components/dashboard/RecentNotes";
 import Library from "@/components/dashboard/Library";
 import UploadNoteModal from "@/components/dashboard/UploadNoteModal";
-import { DashboardPricing } from "@/components/dashboard/DashboardPricing";
 
 const Dashboard = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -65,11 +64,6 @@ const Dashboard = () => {
                 <div>
                   <h2 className="text-xl font-semibold mb-4">My Library</h2>
                   <Library />
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Subscription</h2>
-                  <DashboardPricing />
                 </div>
               </div>
             </div>

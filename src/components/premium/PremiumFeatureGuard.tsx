@@ -56,9 +56,9 @@ export const PremiumFeatureGuard = ({ children }: PremiumFeatureGuardProps) => {
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8">
         <h2 className="text-2xl font-bold mb-4">Premium Feature</h2>
         <p className="text-muted-foreground mb-6 max-w-md">
-          This feature is only available to Pro plan subscribers. Upgrade your plan to access chat and study room features.
+          This feature is only available to Pro plan subscribers. Upgrade your plan to access premium features.
         </p>
-        <Button onClick={() => navigate("/dashboard")} className="w-full max-w-sm">
+        <Button onClick={() => navigate("/auth")} className="w-full max-w-sm">
           View Pricing Plans
         </Button>
       </div>
