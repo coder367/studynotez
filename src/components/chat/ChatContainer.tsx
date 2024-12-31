@@ -70,6 +70,7 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
       let fileType = null;
 
       if (selectedFile) {
+        console.log('Starting file upload...');
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
         
@@ -83,8 +84,10 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
-          throw new Error('Failed to upload file');
+          throw new Error(uploadError.message || 'Failed to upload file');
         }
+
+        console.log('File uploaded successfully:', data);
 
         // Get the public URL
         const { data: { publicUrl } } = supabase.storage
@@ -93,7 +96,10 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
         fileUrl = publicUrl;
         fileType = selectedFile.type;
+        console.log('File URL generated:', fileUrl);
       }
+
+      console.log('Creating message with file:', { fileUrl, fileType });
 
       // Create the message
       const { error: messageError } = await supabase
