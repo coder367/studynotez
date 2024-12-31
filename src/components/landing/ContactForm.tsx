@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -16,17 +17,19 @@ const ContactForm = ({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
     message: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Here you would typically send this to your backend
-      // For now, we'll just simulate sending an email
-      await fetch(`mailto:deepanshusharma9004@gmail.com?subject=Contact Form Submission&body=Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0AMessage: ${formData.message}`);
+      // Create mailto link
+      const mailtoLink = `mailto:deepanshusharma9004@gmail.com?subject=Contact Form Submission&body=Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0AMessage: ${formData.message}`;
+      
+      // Open default email client
+      window.location.href = mailtoLink;
       
       toast({
-        title: "Message sent!",
-        description: "Thank you for your feedback. We'll get back to you soon.",
+        title: "Success!",
+        description: "Your default email client has been opened with the message.",
       });
       
       onOpenChange(false);
@@ -34,7 +37,7 @@ const ContactForm = ({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
     } catch (error) {
       toast({
         title: "Error",
-        description: "There was an error sending your message. Please try again.",
+        description: "There was an error opening your email client. Please try again.",
         variant: "destructive",
       });
     }
@@ -45,6 +48,9 @@ const ContactForm = ({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Contact Us</DialogTitle>
+          <DialogDescription>
+            Send us your feedback or questions. We'll get back to you soon.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
