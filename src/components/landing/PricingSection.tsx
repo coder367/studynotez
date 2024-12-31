@@ -8,8 +8,8 @@ const pricingPlans = [
     price: "0",
     featured: false,
     features: [
-      "Up to 5 study groups",
-      "Basic note sharing",
+      "Access to all notes",
+      "Basic note organization",
       "Community support",
       "Email support",
     ],
@@ -17,27 +17,14 @@ const pricingPlans = [
   {
     name: "Pro",
     description: "Best for active students",
-    price: "19",
+    price: "20",
     featured: true,
     features: [
-      "Unlimited study groups",
-      "Advanced note organization",
-      "Priority support",
+      "Everything in Basic",
+      "Access to chat feature",
+      "Access to study rooms",
       "Live study sessions",
-      "AI study assistance",
-    ],
-  },
-  {
-    name: "Enterprise",
-    description: "For educational institutions",
-    price: "99",
-    featured: false,
-    features: [
-      "Custom user limits",
-      "Advanced analytics",
-      "Dedicated support",
-      "Custom integrations",
-      "SLA guarantee",
+      "Priority support",
     ],
   },
 ];
@@ -49,7 +36,7 @@ const PricingSection = () => {
         <h2 className="text-3xl font-bold text-center mb-16 heading-gradient">
           Simple, Transparent Pricing
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {pricingPlans.map((plan) => (
             <div
               key={plan.name}
@@ -84,7 +71,7 @@ const PricingSection = () => {
                     : "border border-primary text-primary hover:bg-primary/10"
                 }`}
               >
-                {plan.featured ? "Get Started" : "Contact Sales"}
+                Get Started
               </Link>
             </div>
           ))}
