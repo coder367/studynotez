@@ -117,7 +117,7 @@ const DashboardPricing = () => {
               {pricingPlans.map((plan) => (
                 <Card
                   key={plan.name}
-                  className={`p-6 rounded-xl glass-card transition-all duration-300 hover:scale-105 aspect-[4/5] flex flex-col justify-between ${
+                  className={`p-6 rounded-xl glass-card transition-all duration-300 hover:scale-105 aspect-square flex flex-col justify-between ${
                     plan.featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
                   }`}
                 >
