@@ -23,13 +23,14 @@ export const PremiumFeatureGuard = ({ children }: PremiumFeatureGuardProps) => {
           return;
         }
 
-        const { data: subscription } = await supabase
+        const { data: subscription, error } = await supabase
           .from("subscriptions")
-          .select("*")
+          .select()
           .eq("user_id", user.id)
           .eq("status", "active")
           .maybeSingle();
 
+        if (error) throw error;
         setHasSubscription(!!subscription);
       } catch (error) {
         console.error("Error checking subscription:", error);
@@ -57,7 +58,7 @@ export const PremiumFeatureGuard = ({ children }: PremiumFeatureGuardProps) => {
         <p className="text-muted-foreground mb-6 max-w-md">
           This feature is only available to Pro plan subscribers. Upgrade your plan to access chat and study room features.
         </p>
-        <Button onClick={() => navigate("/#pricing")} className="w-full max-w-sm">
+        <Button onClick={() => navigate("/dashboard")} className="w-full max-w-sm">
           View Pricing Plans
         </Button>
       </div>
