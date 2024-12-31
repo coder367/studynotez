@@ -142,14 +142,6 @@ const Auth = () => {
             }}
             providers={["google"]}
             redirectTo={`${window.location.origin}/auth/callback`}
-            onError={(error) => {
-              console.error("Auth error:", error);
-              toast({
-                variant: "destructive",
-                title: "Authentication Error",
-                description: error.message || "Failed to authenticate. Please try again.",
-              });
-            }}
             localization={{
               variables: {
                 sign_up: {
