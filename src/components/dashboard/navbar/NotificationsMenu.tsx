@@ -17,7 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [lastReadTime, setLastReadTime] = useState(() => {
+    // Get the last read time from localStorage or default to current time
+    return localStorage.getItem('lastNotificationRead') || new Date().toISOString();
+  });
   const navigate = useNavigate();
   const { toast: internalToast } = useToast();
   const { data: notifications = [], refetch, isLoading } = useNotifications();
@@ -25,10 +28,10 @@ const NotificationsMenu = () => {
     await refetch();
   });
 
-  // Update unread count when notifications data changes
-  useEffect(() => {
-    setUnreadCount(notifications.filter(n => !isReadNotification(n)).length);
-  }, [notifications]);
+  // Calculate unread count based on notifications newer than last read time
+  const unreadCount = notifications.filter(
+    (n) => new Date(n.created_at) > new Date(lastReadTime)
+  ).length;
 
   const handleNotificationClick = async (notification: NotificationType) => {
     try {
@@ -56,6 +59,9 @@ const NotificationsMenu = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead();
+      const currentTime = new Date().toISOString();
+      setLastReadTime(currentTime);
+      localStorage.setItem('lastNotificationRead', currentTime);
       await refetch();
       toast.success("All notifications marked as read");
     } catch (error) {
@@ -67,16 +73,25 @@ const NotificationsMenu = () => {
   const handleOpenChange = async (open: boolean) => {
     setIsOpen(open);
     if (open) {
-      setUnreadCount(0);
       try {
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .eq('read', false);
+        const unreadNotifications = notifications.filter(
+          (n) => new Date(n.created_at) > new Date(lastReadTime)
+        );
+        
+        if (unreadNotifications.length > 0) {
+          const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .in('id', unreadNotifications.map(n => n.id));
 
-        if (error) throw error;
-        await refetch();
+          if (error) throw error;
+          
+          const currentTime = new Date().toISOString();
+          setLastReadTime(currentTime);
+          localStorage.setItem('lastNotificationRead', currentTime);
+          
+          await refetch();
+        }
       } catch (error) {
         console.error("Error marking notifications as read:", error);
       }
