@@ -9,9 +9,12 @@ import RoomCard from "@/components/study-room/RoomCard";
 import { CreateRoomForm } from "@/components/study-room/CreateRoomForm";
 import type { StudyRoom } from "@/types/study-room";
 
+const SECRET_STATEMENT = "Deepanshu and Pratham this year is will do something";
+
 const StudyRoomPage = () => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [accessAttempted, setAccessAttempted] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
@@ -45,13 +48,23 @@ const StudyRoomPage = () => {
     staleTime: 5000,
   });
 
+  // Check if user has access through localStorage
+  const hasAccess = localStorage.getItem("studyRoomAccess") === "granted";
+
+  const handleAccessAttempt = (statement: string) => {
+    if (statement === SECRET_STATEMENT) {
+      localStorage.setItem("studyRoomAccess", "granted");
+      window.location.reload(); // Reload to show the study room
+    }
+    setAccessAttempted(true);
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center h-[50vh]">Loading...</div>;
   }
 
-  // Show coming soon page for non-editor users
-  const isEditor = currentUser?.email?.endsWith("@lovable.ai");
-  if (!isEditor) {
+  // Show coming soon page for users without access
+  if (!hasAccess) {
     return (
       <div className="container mx-auto py-6">
         <div className="flex items-center gap-4 mb-6">
@@ -72,9 +85,22 @@ const StudyRoomPage = () => {
           <h2 className="text-4xl font-bold text-primary mb-4 animate-fade-up">
             Coming Soon!
           </h2>
-          <p className="text-xl text-muted-foreground text-center max-w-md animate-fade-up" style={{ animationDelay: "200ms" }}>
+          <p className="text-xl text-muted-foreground text-center max-w-md mb-8 animate-fade-up" style={{ animationDelay: "200ms" }}>
             We're working hard to bring you an amazing collaborative study experience. Stay tuned!
           </p>
+          
+          {/* Access form */}
+          <div className="w-full max-w-md mt-4">
+            <input
+              type="text"
+              placeholder="Enter access statement"
+              className="w-full px-4 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+              onChange={(e) => handleAccessAttempt(e.target.value)}
+            />
+            {accessAttempted && (
+              <p className="text-sm text-destructive mt-2">Invalid access statement. Please try again.</p>
+            )}
+          </div>
         </div>
       </div>
     );
