@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import { PayPalButton } from "./pricing/PayPalButton";
+import { useState } from "react";
 
 const pricingPlans = [
   {
@@ -39,20 +41,52 @@ const pricingPlans = [
 const DashboardPricing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const handleSubscribe = async (planName: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      toast({
-        title: "Coming Soon",
-        description: "PayPal integration is being set up. Please try again later.",
-      });
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to subscribe to a plan.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedPlan(planName);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to process subscription. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePaymentSuccess = async (orderId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      await supabase.from("subscriptions").insert({
+        user_id: user.id,
+        plan_type: selectedPlan,
+        status: "active",
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      });
+
+      toast({
+        title: "Success!",
+        description: "Your subscription has been activated.",
+      });
+      
+      setSelectedPlan(null);
+      navigate("/dashboard");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to activate subscription. Please contact support.",
         variant: "destructive",
       });
     }
@@ -64,7 +98,7 @@ const DashboardPricing = () => {
         <DashboardSidebar />
         <div className="flex-1">
           <div className="p-8 max-w-[1400px] mx-auto">
-            <div className="flex items-center mb-10">
+            <div className="flex items-center mb-8">
               <Button
                 variant="ghost"
                 onClick={() => navigate("/dashboard")}
@@ -80,7 +114,7 @@ const DashboardPricing = () => {
               {pricingPlans.map((plan) => (
                 <Card
                   key={plan.name}
-                  className={`p-10 rounded-xl glass-card transition-all duration-300 hover:scale-105 ${
+                  className={`p-8 rounded-xl glass-card transition-all duration-300 hover:scale-105 ${
                     plan.featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
                   }`}
                 >
@@ -89,27 +123,34 @@ const DashboardPricing = () => {
                       Most Popular
                     </span>
                   )}
-                  <h3 className="text-2xl font-bold mb-3">{plan.name}</h3>
-                  <p className="text-muted-foreground mb-6">{plan.description}</p>
-                  <div className="mb-8">
-                    <span className="text-5xl font-bold">${plan.price}</span>
-                    <span className="text-muted-foreground text-lg">/month</span>
+                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                  <p className="text-muted-foreground mb-4">{plan.description}</p>
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold">${plan.price}</span>
+                    <span className="text-muted-foreground">/month</span>
                   </div>
-                  <ul className="space-y-5 mb-10">
+                  <ul className="space-y-3 mb-6">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-center text-muted-foreground">
-                        <Check className="h-6 w-6 text-primary mr-4 flex-shrink-0" />
-                        <span className="text-lg">{feature}</span>
+                        <Check className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    className="w-full text-lg py-7"
-                    variant={plan.featured ? "default" : "outline"}
-                    onClick={() => handleSubscribe(plan.name)}
-                  >
-                    Subscribe Now
-                  </Button>
+                  {selectedPlan === plan.name ? (
+                    <PayPalButton
+                      amount={plan.price}
+                      onSuccess={handlePaymentSuccess}
+                    />
+                  ) : (
+                    <Button
+                      className="w-full py-6"
+                      variant={plan.featured ? "default" : "outline"}
+                      onClick={() => handleSubscribe(plan.name)}
+                    >
+                      {plan.price === "0" ? "Get Started" : "Subscribe Now"}
+                    </Button>
+                  )}
                 </Card>
               ))}
             </div>
