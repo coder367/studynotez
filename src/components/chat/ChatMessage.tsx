@@ -39,31 +39,19 @@ export const ChatMessage = ({
           {!isOwnMessage && senderName && (
             <p className="text-xs font-medium">{senderName}</p>
           )}
-          <p>{content}</p>
+          {content && <p>{content}</p>}
+          {fileUrl && fileType?.startsWith('image/') && (
+            <img 
+              src={fileUrl} 
+              alt="Shared image" 
+              className="max-w-full rounded mt-2"
+              style={{ maxHeight: '300px', objectFit: 'contain' }}
+            />
+          )}
           <span className="text-xs opacity-70">
             {formatMessageDate(createdAt)}
           </span>
         </div>
-        {fileUrl && (
-          <div className="mt-2">
-            {fileType?.startsWith('image/') ? (
-              <img 
-                src={fileUrl} 
-                alt="Shared image" 
-                className="max-w-full rounded"
-              />
-            ) : (
-              <a 
-                href={fileUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-              >
-                Download attachment
-              </a>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
