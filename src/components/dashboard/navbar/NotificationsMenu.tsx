@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const NotificationsMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const { toast: internalToast } = useToast();
   const { data: notifications = [], refetch, isLoading } = useNotifications();
@@ -61,6 +62,7 @@ const NotificationsMenu = () => {
   const handleOpenChange = async (open: boolean) => {
     setIsOpen(open);
     if (open) {
+      setUnreadCount(0);
       try {
         const { error } = await supabase
           .from('notifications')
@@ -76,12 +78,10 @@ const NotificationsMenu = () => {
     }
   };
 
-  const unreadCount = notifications.filter(n => !isReadNotification(n)).length;
-
   return (
     <div className="relative">
       <NotificationBadge 
-        unreadCount={unreadCount} 
+        unreadCount={unreadCount || notifications.filter(n => !isReadNotification(n)).length} 
         onClick={() => handleOpenChange(true)} 
       />
 
