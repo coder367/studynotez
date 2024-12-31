@@ -21,12 +21,12 @@ export const PricingPlan = ({
   featured = false,
   onSubscribe,
   disabled = false,
-  buttonText = "Subscribe Now"
+  buttonText = "Get Started"
 }: PricingPlanProps) => {
   return (
     <Card
-      className={`p-8 rounded-xl ${
-        featured ? "border-2 border-primary" : ""
+      className={`p-8 rounded-xl transition-all duration-300 hover:scale-105 ${
+        featured ? "border-2 border-primary ring-2 ring-primary/20" : ""
       }`}
     >
       {featured && (
@@ -42,7 +42,7 @@ export const PricingPlan = ({
       </div>
       <ul className="space-y-3 mb-8">
         {features.map((feature, index) => (
-          <li key={index} className="flex items-center">
+          <li key={index} className="flex items-center text-muted-foreground">
             <Check className="h-5 w-5 text-primary mr-2 flex-shrink-0" />
             <span>{feature}</span>
           </li>
