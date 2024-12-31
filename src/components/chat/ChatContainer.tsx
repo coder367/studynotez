@@ -71,24 +71,29 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
       if (selectedFile) {
         const fileExt = selectedFile.name.split('.').pop();
-        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage
+        // Upload file to Supabase Storage
+        const { error: uploadError, data } = await supabase.storage
           .from('messages')
-          .upload(filePath, selectedFile);
+          .upload(fileName, selectedFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
         if (uploadError) throw uploadError;
 
+        // Get the public URL
         const { data: { publicUrl } } = supabase.storage
           .from('messages')
-          .getPublicUrl(filePath);
+          .getPublicUrl(fileName);
 
         fileUrl = publicUrl;
         fileType = selectedFile.type;
       }
 
       // Create the message
-      const { error } = await supabase
+      const { error: messageError } = await supabase
         .from("messages")
         .insert({
           content: message.trim(),
@@ -98,7 +103,7 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
           file_type: fileType,
         });
 
-      if (error) throw error;
+      if (messageError) throw messageError;
 
       // Create notification for private messages
       if (activeChat !== "public") {
@@ -116,7 +121,11 @@ export const ChatContainer = ({ activeChat, currentUser }: ChatContainerProps) =
 
       setMessage("");
       setSelectedFile(null);
+      
+      // Refetch messages to show the new one
+      refetchMessages();
     } catch (error: any) {
+      console.error('Error sending message:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to send message",
