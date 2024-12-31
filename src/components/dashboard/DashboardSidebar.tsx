@@ -1,69 +1,63 @@
-import { Link } from "react-router-dom";
-import { BookOpen, MessageSquare, Users, User, CreditCard } from "lucide-react";
+import { NavLink } from "react-router-dom";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
+  BookOpen,
+  MessageSquare,
+  Users,
+  User,
+  CreditCard,
+} from "lucide-react";
 
 const DashboardSidebar = () => {
+  const menuItems = [
+    {
+      title: "Notes",
+      icon: <BookOpen className="w-4 h-4" />,
+      href: "/dashboard/notes",
+    },
+    {
+      title: "Chat",
+      icon: <MessageSquare className="w-4 h-4" />,
+      href: "/dashboard/chat",
+    },
+    {
+      title: "Study Room",
+      icon: <Users className="w-4 h-4" />,
+      href: "/dashboard/study-room",
+    },
+    {
+      title: "Profile",
+      icon: <User className="w-4 h-4" />,
+      href: "/dashboard/profile",
+    },
+    {
+      title: "Pricing",
+      icon: <CreditCard className="w-4 h-4" />,
+      href: "/dashboard/pricing",
+    },
+  ];
+
   return (
-    <Sidebar className="border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <div className="space-y-4">
-              <SidebarMenuItem className="list-none">
-                <SidebarMenuButton asChild>
-                  <Link to="/dashboard/notes" className="flex items-center gap-4 rounded-lg px-6 py-4 text-lg text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <BookOpen className="h-8 w-8" />
-                    <span>Notes</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem className="list-none">
-                <SidebarMenuButton asChild>
-                  <Link to="/dashboard/chat" className="flex items-center gap-4 rounded-lg px-6 py-4 text-lg text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <MessageSquare className="h-8 w-8" />
-                    <span>Chat</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem className="list-none">
-                <SidebarMenuButton asChild>
-                  <Link to="/dashboard/study-room" className="flex items-center gap-4 rounded-lg px-6 py-4 text-lg text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <Users className="h-8 w-8" />
-                    <span>Study Room</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem className="list-none">
-                <SidebarMenuButton asChild>
-                  <Link to="/dashboard/pricing" className="flex items-center gap-4 rounded-lg px-6 py-4 text-lg text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-                    <CreditCard className="h-8 w-8" />
-                    <span>Pricing</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-border p-4">
-        <SidebarMenuItem className="list-none">
-          <SidebarMenuButton asChild>
-            <Link to="/dashboard/profile" className="flex items-center gap-4 rounded-lg px-6 py-4 text-lg text-muted-foreground transition-all hover:text-primary hover:bg-muted/50">
-              <User className="h-8 w-8" />
-              <span>Profile</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarFooter>
-    </Sidebar>
+    <aside className="hidden lg:flex h-screen w-64 flex-col fixed left-0 top-0 bottom-0 bg-background border-r">
+      <div className="flex h-14 items-center border-b px-6 font-semibold">
+        Study Notes
+      </div>
+      <nav className="flex-1 space-y-1 p-4">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.href}
+            to={item.href}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent ${
+                isActive ? "bg-accent" : ""
+              }`
+            }
+          >
+            {item.icon}
+            {item.title}
+          </NavLink>
+        ))}
+      </nav>
+    </aside>
   );
 };
 
