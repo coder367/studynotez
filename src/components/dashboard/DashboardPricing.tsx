@@ -69,11 +69,13 @@ const DashboardPricing = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      
       await supabase.from("subscriptions").insert({
         user_id: user.id,
         plan_type: selectedPlan,
         status: "active",
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        current_period_end: thirtyDaysFromNow.toISOString(),
       });
 
       toast({
