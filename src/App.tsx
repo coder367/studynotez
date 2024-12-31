@@ -12,7 +12,6 @@ import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 import StudyRoom from "./pages/StudyRoom";
 import StudyRoomView from "./pages/StudyRoomView";
-import DashboardPricing from "./components/dashboard/DashboardPricing";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +33,6 @@ function App() {
             <Route path="/dashboard/profile/:userId" element={<Profile />} />
             <Route path="/dashboard/study-room" element={<StudyRoom />} />
             <Route path="/dashboard/study-room/:id" element={<StudyRoomView />} />
-            <Route path="/dashboard/pricing" element={<DashboardPricing />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
