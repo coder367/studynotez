@@ -17,7 +17,7 @@ export const NoteViewer: FC<NoteViewerProps> = ({ fileUrl, title }) => {
           className="w-full h-full"
           title={title}
           style={{
-            minHeight: isMobile ? '100%' : '600px',
+            height: isMobile ? '80vh' : '600px',
             border: 'none',
           }}
         />
