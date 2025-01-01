@@ -4,18 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import ViewNoteModal from "./ViewNoteModal";
 import { useNavigate } from "react-router-dom";
-
-interface Note {
-  id: string;
-  title: string;
-  description?: string;
-  subject?: string;
-  university?: string;
-  file_url?: string;
-  file_type?: string;
-  user_id: string;
-  created_at: string;
-}
+import { Note } from "@/types/notes";
 
 interface RecentNote {
   created_at: string;
@@ -38,15 +27,11 @@ const RecentNotes = () => {
         .select(`
           created_at,
           notes (
-            id,
-            title,
-            description,
-            subject,
-            university,
-            file_url,
-            file_type,
-            user_id,
-            created_at
+            *,
+            profile:profiles(
+              full_name,
+              avatar_url
+            )
           )
         `)
         .eq("activity_type", "view")
@@ -57,7 +42,13 @@ const RecentNotes = () => {
         const uniqueNotes = data.reduce((acc: RecentNote[], current: RecentNote) => {
           const exists = acc.find(item => item.notes.id === current.notes.id);
           if (!exists) {
-            acc.push(current);
+            acc.push({
+              ...current,
+              notes: {
+                ...current.notes,
+                profile: current.notes.profile || null
+              }
+            });
           }
           return acc;
         }, []);

@@ -5,21 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import ViewNoteModal from "../dashboard/ViewNoteModal";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Note } from "@/types/notes";
 
 interface UserNotesProps {
   userId: string;
-}
-
-interface Note {
-  id: string;
-  title: string;
-  description?: string;
-  subject?: string;
-  university?: string;
-  file_url?: string;
-  file_type?: string;
-  user_id: string;
-  created_at: string;
 }
 
 export const UserNotes = ({ userId }: UserNotesProps) => {
@@ -31,10 +20,20 @@ export const UserNotes = ({ userId }: UserNotesProps) => {
     queryFn: async () => {
       const { data } = await supabase
         .from("notes")
-        .select("*")
+        .select(`
+          *,
+          profile:profiles(
+            full_name,
+            avatar_url
+          )
+        `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      return data || [];
+
+      return (data || []).map((note) => ({
+        ...note,
+        profile: note.profile || null
+      })) as Note[];
     },
   });
 
