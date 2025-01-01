@@ -31,10 +31,7 @@ const Library = () => {
         .select(`
           notes (
             *,
-            profiles!notes_user_id_fkey (
-              full_name,
-              avatar_url
-            )
+            user_id
           )
         `)
         .eq("user_id", user.id)
@@ -46,14 +43,26 @@ const Library = () => {
       }
 
       if (data) {
-        const formattedNotes = data.map(item => ({
-          ...item.notes,
-          profile: item.notes.profiles ? {
-            full_name: item.notes.profiles.full_name,
-            avatar_url: item.notes.profiles.avatar_url
-          } : null
-        })) as Note[];
-        setNotes(formattedNotes);
+        // Fetch profiles separately for each note
+        const notesWithProfiles = await Promise.all(
+          data.map(async (item) => {
+            const { data: profileData } = await supabase
+              .from("profiles")
+              .select("full_name, avatar_url")
+              .eq("id", item.notes.user_id)
+              .single();
+
+            return {
+              ...item.notes,
+              profile: profileData ? {
+                full_name: profileData.full_name,
+                avatar_url: profileData.avatar_url
+              } : null
+            };
+          })
+        );
+
+        setNotes(notesWithProfiles as Note[]);
       }
     };
 
