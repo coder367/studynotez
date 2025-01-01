@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { NoteContainer } from "./note-modal/NoteContainer";
+import { NoteHeader } from "./note-modal/NoteHeader";
+import { NoteViewer } from "./note-modal/NoteViewer";
+import { NoteSidebar } from "./note-modal/NoteSidebar";
 
 interface ViewNoteModalProps {
   isOpen: boolean;
@@ -221,21 +223,34 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
         <DialogTitle className="sr-only">{note.title}</DialogTitle>
         
-        <NoteContainer
-          note={note}
-          profile={profile}
-          isLiked={isLiked}
-          isSaved={isSaved}
-          showChatButton={!!currentUser && currentUser.id !== note.user_id}
-          isFollowing={isFollowing}
+        <NoteHeader
+          title={note.title}
+          description={note.description}
+          subject={note.subject}
+          university={note.university}
+          fileUrl={note.file_url}
           onDownload={handleDownload}
-          onLike={handleLike}
-          onSave={handleSave}
-          onShare={handleShare}
-          onChat={handleChat}
-          onFollow={handleFollow}
           onClose={onClose}
         />
+
+        <div className="flex-1 min-h-0 flex">
+          <NoteViewer fileUrl={note.file_url} title={note.title} />
+          
+          <NoteSidebar
+            profile={profile}
+            noteUserId={note.user_id}
+            createdAt={note.created_at}
+            isLiked={isLiked}
+            isSaved={isSaved}
+            showChatButton={!!currentUser && currentUser.id !== note.user_id}
+            isFollowing={isFollowing}
+            onLike={handleLike}
+            onSave={handleSave}
+            onShare={handleShare}
+            onChat={handleChat}
+            onFollow={handleFollow}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
