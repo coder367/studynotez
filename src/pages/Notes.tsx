@@ -19,11 +19,12 @@ const Notes = () => {
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ["notes", searchQuery, selectedSubject, selectedUniversity],
     queryFn: async () => {
+      console.log("Fetching notes with profile data..."); // Debug log
       let query = supabase
         .from("notes")
         .select(`
           *,
-          profile:profiles!inner(
+          profile:profiles(
             full_name,
             avatar_url
           )
@@ -40,11 +41,17 @@ const Notes = () => {
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Error fetching notes:", error); // Debug log
+        throw error;
+      }
+      
+      console.log("Fetched notes:", data); // Debug log
       
       return (data as any[]).map(note => ({
         ...note,
-        profile: note.profile[0]
+        profile: note.profile
       })) as Note[];
     },
   });
