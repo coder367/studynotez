@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, User, MessageSquare, UserPlus } from "lucide-react";
+import { FileText, User, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import ViewNoteModal from "./ViewNoteModal";
@@ -20,10 +20,10 @@ interface Note {
   file_url?: string;
   preview_image?: string;
   user_id: string;
-  profiles?: {
-    full_name: string;
-    avatar_url: string;
-  };
+  profile?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 const Library = () => {
@@ -52,7 +52,7 @@ const Library = () => {
           note_id,
           notes (
             *,
-            profiles (
+            profile:profiles (
               full_name,
               avatar_url
             )
@@ -61,11 +61,17 @@ const Library = () => {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (!error && data) {
-        setNotes(data.map(item => ({
+      if (error) {
+        console.error("Error fetching saved notes:", error);
+        return;
+      }
+
+      if (data) {
+        const formattedNotes: Note[] = data.map(item => ({
           ...item.notes,
-          profiles: item.notes.profiles
-        })));
+          profile: item.notes.profile
+        }));
+        setNotes(formattedNotes);
       }
     };
 
@@ -73,6 +79,8 @@ const Library = () => {
   }, []);
 
   const handleNoteClick = async (note: Note) => {
+    if (!currentUserId) return;
+    
     await supabase.from("note_activities").insert({
       user_id: currentUserId,
       note_id: note.id,
@@ -158,13 +166,13 @@ const Library = () => {
                   onClick={(e) => handleProfileClick(e, note.user_id)}
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={note.profiles?.avatar_url} />
+                    <AvatarImage src={note.profile?.avatar_url || undefined} />
                     <AvatarFallback>
                       <User className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium">
-                    {note.profiles?.full_name || "Anonymous"}
+                    {note.profile?.full_name || "Anonymous"}
                   </span>
                 </div>
                 <Button
