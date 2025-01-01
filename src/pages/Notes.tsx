@@ -10,20 +10,23 @@ import { useNavigate } from "react-router-dom";
 import ViewNoteModal from "@/components/dashboard/ViewNoteModal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+interface Profile {
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 interface Note {
   id: string;
   title: string;
-  description: string;
-  subject: string;
-  university: string;
-  created_at: string;
-  file_type?: string;
-  file_url?: string;
+  description: string | null;
+  subject: string | null;
+  university: string | null;
+  content: string | null;
+  file_type?: string | null;
+  file_url?: string | null;
   user_id: string;
-  profile?: {
-    full_name: string | null;
-    avatar_url: string | null;
-  };
+  created_at: string;
+  profile: Profile;
 }
 
 const Notes = () => {
@@ -40,7 +43,7 @@ const Notes = () => {
         .from("notes")
         .select(`
           *,
-          profile:profiles(
+          profile:profiles!inner(
             full_name,
             avatar_url
           )
@@ -58,8 +61,12 @@ const Notes = () => {
 
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
-      console.log("Notes with profiles:", data);
-      return data as Note[];
+      
+      // Transform the data to match our Note interface
+      return (data as any[]).map(note => ({
+        ...note,
+        profile: note.profile[0] // Take the first profile since it's returned as an array
+      })) as Note[];
     },
   });
 
@@ -182,7 +189,7 @@ const Notes = () => {
                     {note.university && (
                       <span 
                         className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer hover:bg-secondary/20"
-                        onClick={(e) => handleUniversityClick(e, note.university)}
+                        onClick={(e) => handleUniversityClick(e, note.university!)}
                       >
                         {note.university}
                       </span>
