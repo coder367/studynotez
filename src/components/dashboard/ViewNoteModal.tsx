@@ -5,6 +5,7 @@ import { NoteHeader } from "./note-modal/NoteHeader";
 import { NoteViewer } from "./note-modal/NoteViewer";
 import { NoteSidebar } from "./note-modal/NoteSidebar";
 import { UserProfileSection } from "./note-modal/UserProfileSection";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ViewNoteModalProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ interface ViewNoteModalProps {
 }
 
 const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
+  const isMobile = useIsMobile();
+  
   // Query to get current user
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
@@ -53,10 +56,12 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
           onDownload={handleDownload}
         />
 
-        <div className="flex-1 min-h-0 flex">
-          <NoteViewer fileUrl={note.file_url} title={note.title} />
+        <div className={`flex-1 min-h-0 ${isMobile ? 'flex flex-col' : 'flex'}`}>
+          <div className={`${isMobile ? 'h-[60vh]' : 'flex-1'}`}>
+            <NoteViewer fileUrl={note.file_url} title={note.title} />
+          </div>
           
-          <div className="w-64 border-l flex flex-col">
+          <div className={`${isMobile ? 'w-full border-t' : 'w-64 border-l'} flex flex-col`}>
             <UserProfileSection 
               userId={note.user_id}
               currentUser={currentUser}
