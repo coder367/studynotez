@@ -1,73 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import ViewNoteModal from "./ViewNoteModal";
 import { useNavigate } from "react-router-dom";
-
-interface Note {
-  id: string;
-  title: string;
-  description?: string;
-  subject?: string;
-  university?: string;
-  file_url?: string;
-  file_type?: string;
-  user_id: string;
-  created_at: string;
-}
-
-interface RecentNote {
-  created_at: string;
-  notes: Note;
-}
+import { useRecentNotes } from "@/hooks/useRecentNotes";
+import { Note } from "@/types/notes";
 
 const RecentNotes = () => {
-  const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchRecentNotes = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("note_activities")
-        .select(`
-          created_at,
-          notes (
-            id,
-            title,
-            description,
-            subject,
-            university,
-            file_url,
-            file_type,
-            user_id,
-            created_at
-          )
-        `)
-        .eq("activity_type", "view")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        const uniqueNotes = data.reduce((acc: RecentNote[], current: RecentNote) => {
-          const exists = acc.find(item => item.notes.id === current.notes.id);
-          if (!exists) {
-            acc.push(current);
-          }
-          return acc;
-        }, []);
-
-        setRecentNotes(uniqueNotes.slice(0, 10));
-      }
-    };
-
-    fetchRecentNotes();
-  }, []);
+  const recentNotes = useRecentNotes();
 
   const handleNoteClick = async (note: Note) => {
     await supabase.from("note_activities").insert({

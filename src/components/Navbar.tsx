@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "./ui/button";
+import { NavLinks } from "./navbar/NavLinks";
+import { MobileMenu } from "./navbar/MobileMenu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,53 +51,11 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-4">
-              <a
-                href="#features"
-                className="nav-link"
-                onClick={(e) => handleNavClick(e, "features")}
-              >
-                Features
-              </a>
-              <a
-                href="#pricing"
-                className="nav-link"
-                onClick={(e) => handleNavClick(e, "pricing")}
-              >
-                Pricing
-              </a>
-              <a
-                href="#faq"
-                className="nav-link"
-                onClick={(e) => handleNavClick(e, "faq")}
-              >
-                FAQ
-              </a>
-              {user ? (
-                <>
-                  <Link to="/dashboard" className="nav-link">
-                    Dashboard
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    className="nav-link"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Link to="/auth" className="nav-link">
-                    Login
-                  </Link>
-                  <Link to="/auth" className="btn-primary">
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
+            <NavLinks 
+              user={user} 
+              handleLogout={handleLogout} 
+              handleNavClick={handleNavClick}
+            />
           </div>
 
           {/* Mobile menu button */}
@@ -112,72 +71,13 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <a
-              href="#features"
-              className="block nav-link"
-              onClick={(e) => handleNavClick(e, "features")}
-            >
-              Features
-            </a>
-            <a
-              href="#pricing"
-              className="block nav-link"
-              onClick={(e) => handleNavClick(e, "pricing")}
-            >
-              Pricing
-            </a>
-            <a
-              href="#faq"
-              className="block nav-link"
-              onClick={(e) => handleNavClick(e, "faq")}
-            >
-              FAQ
-            </a>
-            {user ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="block nav-link"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start nav-link"
-                  onClick={() => {
-                    handleLogout();
-                    setIsOpen(false);
-                  }}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/auth"
-                  className="block nav-link"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/auth"
-                  className="block btn-primary w-full text-center"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <MobileMenu 
+        isOpen={isOpen}
+        user={user}
+        handleLogout={handleLogout}
+        handleNavClick={handleNavClick}
+        setIsOpen={setIsOpen}
+      />
     </nav>
   );
 };
