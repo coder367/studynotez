@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { NoteHeader } from "./note-modal/NoteHeader";
-import { UserInfo } from "./note-modal/UserInfo";
-import { NoteActions } from "./note-modal/NoteActions";
+import { NoteViewer } from "./note-modal/NoteViewer";
+import { NoteSidebar } from "./note-modal/NoteSidebar";
 
 interface ViewNoteModalProps {
   isOpen: boolean;
@@ -30,26 +30,38 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Query to get the note author's profile
   const { data: profile } = useQuery({
     queryKey: ["profile", note.user_id],
     queryFn: async () => {
-      const { data } = await supabase
+      console.log("Fetching profile for user:", note.user_id);
+      const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", note.user_id)
         .single();
+      
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return null;
+      }
+      
+      console.log("Profile data:", data);
       return data;
     },
   });
 
+  // Query to get current user
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("Current user:", user);
       return user;
     },
   });
 
+  // Query to check if following
   const { data: followers = [] } = useQuery({
     queryKey: ["isFollowing", note.user_id],
     queryFn: async () => {
@@ -93,31 +105,18 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
 
     try {
       if (isFollowing) {
-        const { error } = await supabase
+        await supabase
           .from("followers")
           .delete()
           .eq("follower_id", currentUser.id)
           .eq("following_id", note.user_id);
-
-        if (error) throw error;
       } else {
-        // Check if the follow relationship already exists
-        const { data: existingFollow } = await supabase
+        await supabase
           .from("followers")
-          .select("*")
-          .eq("follower_id", currentUser.id)
-          .eq("following_id", note.user_id);
-
-        if (!existingFollow || existingFollow.length === 0) {
-          const { error } = await supabase
-            .from("followers")
-            .insert({
-              follower_id: currentUser.id,
-              following_id: note.user_id,
-            });
-
-          if (error) throw error;
-        }
+          .insert({
+            follower_id: currentUser.id,
+            following_id: note.user_id,
+          });
       }
     } catch (error: any) {
       toast({
@@ -222,6 +221,7 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
         <DialogTitle className="sr-only">{note.title}</DialogTitle>
+        
         <NoteHeader
           title={note.title}
           description={note.description}
@@ -233,36 +233,22 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
         />
 
         <div className="flex-1 min-h-0 flex">
-          <div className="flex-1 overflow-hidden">
-            {note.file_url && (
-              <iframe
-                src={note.file_url}
-                className="w-full h-full"
-                title={note.title}
-              />
-            )}
-          </div>
-          {profile && (
-            <div className="w-64 border-l p-4">
-              <UserInfo
-                avatarUrl={profile.avatar_url}
-                fullName={profile.full_name}
-                createdAt={note.created_at}
-                userId={note.user_id}
-              />
-              <NoteActions
-                isLiked={isLiked}
-                isSaved={isSaved}
-                showChatButton={!!currentUser && currentUser.id !== note.user_id}
-                isFollowing={isFollowing}
-                onLike={handleLike}
-                onSave={handleSave}
-                onShare={handleShare}
-                onChat={handleChat}
-                onFollow={handleFollow}
-              />
-            </div>
-          )}
+          <NoteViewer fileUrl={note.file_url} title={note.title} />
+          
+          <NoteSidebar
+            profile={profile}
+            noteUserId={note.user_id}
+            createdAt={note.created_at}
+            isLiked={isLiked}
+            isSaved={isSaved}
+            showChatButton={!!currentUser && currentUser.id !== note.user_id}
+            isFollowing={isFollowing}
+            onLike={handleLike}
+            onSave={handleSave}
+            onShare={handleShare}
+            onChat={handleChat}
+            onFollow={handleFollow}
+          />
         </div>
       </DialogContent>
     </Dialog>
