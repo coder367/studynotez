@@ -31,7 +31,7 @@ const Library = () => {
         .select(`
           notes (
             *,
-            profile:profiles (
+            profile:profiles!notes_user_id_fkey (
               full_name,
               avatar_url
             )
