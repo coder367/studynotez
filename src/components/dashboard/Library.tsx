@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, User, MessageSquare, UserPlus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import ViewNoteModal from "./ViewNoteModal";
 import { useNavigate } from "react-router-dom";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface Note {
   id: string;
@@ -17,12 +20,26 @@ interface Note {
   file_url?: string;
   preview_image?: string;
   user_id: string;
+  profiles?: {
+    full_name: string;
+    avatar_url: string;
+  };
 }
 
 const Library = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   useEffect(() => {
     const fetchSavedNotes = async () => {
@@ -33,13 +50,22 @@ const Library = () => {
         .from("saved_notes")
         .select(`
           note_id,
-          notes (*)
+          notes (
+            *,
+            profiles (
+              full_name,
+              avatar_url
+            )
+          )
         `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        setNotes(data.map(item => item.notes));
+        setNotes(data.map(item => ({
+          ...item.notes,
+          profiles: item.notes.profiles
+        })));
       }
     };
 
@@ -48,7 +74,7 @@ const Library = () => {
 
   const handleNoteClick = async (note: Note) => {
     await supabase.from("note_activities").insert({
-      user_id: (await supabase.auth.getUser()).data.user?.id,
+      user_id: currentUserId,
       note_id: note.id,
       activity_type: "view",
     });
@@ -58,6 +84,24 @@ const Library = () => {
   const handleUniversityClick = (e: React.MouseEvent, university: string) => {
     e.stopPropagation();
     navigate(`/dashboard/notes?university=${encodeURIComponent(university)}`);
+  };
+
+  const handleProfileClick = (e: React.MouseEvent, userId: string) => {
+    e.stopPropagation();
+    navigate(`/dashboard/profile/${userId}`);
+  };
+
+  const handleMessageClick = (e: React.MouseEvent, userId: string) => {
+    e.stopPropagation();
+    if (!currentUserId) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to message users",
+        variant: "destructive",
+      });
+      return;
+    }
+    navigate(`/dashboard/chat?user=${userId}`);
   };
 
   return (
@@ -107,6 +151,30 @@ const Library = () => {
                     {note.university}
                   </span>
                 )}
+              </div>
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <div 
+                  className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                  onClick={(e) => handleProfileClick(e, note.user_id)}
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={note.profiles?.avatar_url} />
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">
+                    {note.profiles?.full_name || "Anonymous"}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => handleMessageClick(e, note.user_id)}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 {new Date(note.created_at).toLocaleDateString()}
