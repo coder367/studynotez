@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Heart, Share2, Bookmark, MessageSquare } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface NoteActionsProps {
   isLiked: boolean;
@@ -24,6 +25,26 @@ export const NoteActions = ({
   onChat,
   onFollow,
 }: NoteActionsProps) => {
+  const { toast } = useToast();
+
+  const handleShare = async () => {
+    try {
+      const shareUrl = `${window.location.origin}/dashboard/notes/${new URLSearchParams(window.location.search).get('id')}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied!",
+        description: "Share this link with others to view the note.",
+      });
+      onShare();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy link",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2 mt-4">
       {showChatButton && (
@@ -65,7 +86,7 @@ export const NoteActions = ({
         <Button
           variant="outline"
           size="icon"
-          onClick={onShare}
+          onClick={handleShare}
         >
           <Share2 className="h-4 w-4" />
         </Button>

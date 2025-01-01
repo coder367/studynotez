@@ -12,10 +12,14 @@ interface UserInfoProps {
 export const UserInfo = ({ avatarUrl, fullName, createdAt, userId }: UserInfoProps) => {
   const navigate = useNavigate();
 
+  const handleProfileClick = () => {
+    navigate(`/dashboard/profile/${userId}`);
+  };
+
   return (
     <div 
       className="flex items-center gap-3 p-4 rounded-lg bg-background cursor-pointer hover:bg-accent/50 transition-colors"
-      onClick={() => navigate(`/dashboard/profile/${userId}`)}
+      onClick={handleProfileClick}
     >
       <Avatar className="h-10 w-10">
         <AvatarImage src={avatarUrl} />
@@ -24,7 +28,7 @@ export const UserInfo = ({ avatarUrl, fullName, createdAt, userId }: UserInfoPro
         </AvatarFallback>
       </Avatar>
       <div>
-        <h4 className="font-medium">{fullName}</h4>
+        <h4 className="font-medium">{fullName || "Anonymous"}</h4>
         <p className="text-xs text-muted-foreground">
           {new Date(createdAt).toLocaleDateString()}
         </p>

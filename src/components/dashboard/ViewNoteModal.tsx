@@ -199,7 +199,8 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
 
   const handleShare = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      const shareUrl = `${window.location.origin}/dashboard/notes/${note.id}`;
+      await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Success",
         description: "Link copied to clipboard",
