@@ -6,12 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { ChatContainer } from "@/components/chat/ChatContainer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Chat = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [activeChat, setActiveChat] = useState<"public" | { id: string; full_name: string } | null>("public");
+  const [showSidebar, setShowSidebar] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -27,7 +30,6 @@ const Chat = () => {
   useEffect(() => {
     const userId = searchParams.get('user');
     if (userId) {
-      // Fetch user profile
       const fetchUser = async () => {
         const { data } = await supabase
           .from("profiles")
@@ -37,31 +39,56 @@ const Chat = () => {
         
         if (data) {
           setActiveChat(data);
+          if (isMobile) {
+            setShowSidebar(false);
+          }
         }
       };
       fetchUser();
     }
-  }, [searchParams]);
+  }, [searchParams, isMobile]);
+
+  const handleChatSelect = (chat: typeof activeChat) => {
+    setActiveChat(chat);
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  };
 
   return (
     <div className="h-screen flex">
-      <ChatSidebar 
-        users={[]}
-        activeChat={activeChat}
-        onChatSelect={setActiveChat}
-        currentUserId={currentUser}
-      />
+      {(showSidebar || !isMobile) && (
+        <div className={`${isMobile ? 'absolute inset-0 z-50 bg-background' : ''}`}>
+          <ChatSidebar 
+            users={[]}
+            activeChat={activeChat}
+            onChatSelect={handleChatSelect}
+            currentUserId={currentUser}
+          />
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col">
         <div className="border-b p-4 flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/dashboard")}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          {isMobile && !showSidebar ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSidebar(true)}
+              className="mr-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/dashboard")}
+              className="mr-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <h2 className="font-semibold">
             {activeChat === "public"
               ? "Public Chat"

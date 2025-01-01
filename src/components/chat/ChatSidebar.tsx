@@ -5,6 +5,7 @@ import { Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChatUser {
   id: string;
@@ -21,13 +22,13 @@ interface ChatSidebarProps {
 
 export const ChatSidebar = ({ activeChat, onChatSelect, currentUserId }: ChatSidebarProps) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const { data: connectedUsers = [] } = useQuery({
     queryKey: ["connected-users", currentUserId],
     queryFn: async () => {
       if (!currentUserId) return [];
 
-      // Get users from private messages
       const { data: messageUsers } = await supabase
         .from("messages")
         .select("sender_id, receiver_id")
@@ -36,14 +37,12 @@ export const ChatSidebar = ({ activeChat, onChatSelect, currentUserId }: ChatSid
 
       if (!messageUsers) return [];
 
-      // Get unique user IDs from messages
       const userIds = new Set<string>();
       messageUsers.forEach(msg => {
         if (msg.sender_id !== currentUserId) userIds.add(msg.sender_id);
         if (msg.receiver_id !== currentUserId) userIds.add(msg.receiver_id);
       });
 
-      // Get user profiles
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url")
@@ -55,7 +54,7 @@ export const ChatSidebar = ({ activeChat, onChatSelect, currentUserId }: ChatSid
   });
   
   return (
-    <div className="w-64 border-r bg-background flex flex-col">
+    <div className={`w-full md:w-64 border-r bg-background flex flex-col h-full ${isMobile ? 'min-h-screen' : ''}`}>
       <div className="p-4 flex-1">
         <Button
           variant="ghost"
