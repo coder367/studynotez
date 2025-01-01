@@ -81,7 +81,7 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
                   <User className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium hover:underline">
                 {note.profile?.full_name || "Anonymous"}
               </span>
             </div>
