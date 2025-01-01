@@ -31,7 +31,7 @@ const Library = () => {
         .select(`
           notes (
             *,
-            profile:profiles!notes_user_id_fkey (
+            profiles (
               full_name,
               avatar_url
             )
@@ -48,7 +48,7 @@ const Library = () => {
       if (data) {
         const formattedNotes = data.map(item => ({
           ...item.notes,
-          profile: item.notes.profile
+          profile: item.notes.profiles
         }));
         setNotes(formattedNotes);
       }
