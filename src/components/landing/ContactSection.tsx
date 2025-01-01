@@ -40,7 +40,7 @@ const ContactSection = () => {
   };
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background/50">
+    <section id="contact-section" className="py-16 px-4 sm:px-6 lg:px-8 bg-background/50">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
@@ -52,9 +52,9 @@ const ContactSection = () => {
             </p>
             <div className="hidden lg:block">
               <img 
-                src="/lovable-uploads/34ac074a-c18c-4ac6-8a3a-1f4389baeda5.png" 
+                src="/lovable-uploads/ab2a1dac-d67b-436f-93c3-aaf8a4d3b0f6.png" 
                 alt="Contact illustration" 
-                className="w-full max-w-md mx-auto"
+                className="w-full max-w-md mx-auto rounded-lg shadow-xl transform hover:scale-105 transition-transform duration-300"
               />
             </div>
           </div>

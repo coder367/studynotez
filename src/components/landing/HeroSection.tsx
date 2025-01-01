@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import ContactForm from "./ContactForm";
 
 const HeroSection = () => {
   const navigate = useNavigate();
-  const [isContactFormOpen, setIsContactFormOpen] = useState(false);
+
+  const scrollToContact = () => {
+    const contactSection = document.getElementById('contact-section');
+    contactSection?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
@@ -31,13 +33,12 @@ const HeroSection = () => {
           <Button
             variant="outline"
             size="lg"
-            onClick={() => setIsContactFormOpen(true)}
+            onClick={scrollToContact}
           >
             Contact Us
           </Button>
         </div>
       </div>
-      <ContactForm open={isContactFormOpen} onOpenChange={setIsContactFormOpen} />
     </section>
   );
 };
