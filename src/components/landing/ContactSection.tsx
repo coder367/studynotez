@@ -47,14 +47,11 @@ const ContactSection = () => {
             <h2 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Contact Us
             </h2>
-            <p className="text-lg text-muted-foreground">
-              Have questions or feedback? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-            </p>
             <div className="hidden lg:block">
               <img 
                 src="/lovable-uploads/ab2a1dac-d67b-436f-93c3-aaf8a4d3b0f6.png" 
                 alt="Contact illustration" 
-                className="w-full max-w-md mx-auto rounded-lg shadow-xl transform hover:scale-105 transition-transform duration-300"
+                className="w-full max-w-md mx-auto rounded-lg shadow-xl transform hover:scale-105 transition-transform duration-300 object-cover aspect-video"
               />
             </div>
           </div>
