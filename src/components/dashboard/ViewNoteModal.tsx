@@ -32,6 +32,12 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
     },
   });
 
+  const handleDownload = () => {
+    if (note.file_url) {
+      window.open(note.file_url, '_blank');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
@@ -44,6 +50,7 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
           university={note.university}
           fileUrl={note.file_url}
           onClose={onClose}
+          onDownload={handleDownload}
         />
 
         <div className="flex-1 min-h-0 flex">
