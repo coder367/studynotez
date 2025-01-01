@@ -37,24 +37,28 @@ export const NoteSidebar: FC<NoteSidebarProps> = ({
   if (!profile) return null;
 
   return (
-    <div className="w-64 border-l p-4">
-      <UserInfo
-        avatarUrl={profile.avatar_url}
-        fullName={profile.full_name}
-        createdAt={createdAt}
-        userId={noteUserId}
-      />
-      <NoteActions
-        isLiked={isLiked}
-        isSaved={isSaved}
-        showChatButton={showChatButton}
-        isFollowing={isFollowing}
-        onLike={onLike}
-        onSave={onSave}
-        onShare={onShare}
-        onChat={onChat}
-        onFollow={onFollow}
-      />
+    <div className="w-80 border-l bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex flex-col h-full p-6">
+        <UserInfo
+          avatarUrl={profile.avatar_url}
+          fullName={profile.full_name}
+          createdAt={createdAt}
+          userId={noteUserId}
+        />
+        <div className="mt-6">
+          <NoteActions
+            isLiked={isLiked}
+            isSaved={isSaved}
+            showChatButton={showChatButton}
+            isFollowing={isFollowing}
+            onLike={onLike}
+            onSave={onSave}
+            onShare={onShare}
+            onChat={onChat}
+            onFollow={onFollow}
+          />
+        </div>
+      </div>
     </div>
   );
 };
