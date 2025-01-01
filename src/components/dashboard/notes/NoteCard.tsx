@@ -76,7 +76,10 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
               onClick={(e) => handleProfileClick(e, note.user_id)}
             >
               <Avatar className="h-8 w-8">
-                <AvatarImage src={note.profile?.avatar_url || undefined} />
+                <AvatarImage 
+                  src={note.profile?.avatar_url || undefined} 
+                  alt={note.profile?.full_name || "User"}
+                />
                 <AvatarFallback>
                   <User className="h-4 w-4" />
                 </AvatarFallback>
