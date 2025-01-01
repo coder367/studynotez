@@ -1,33 +1,13 @@
 import { useState } from "react";
-import { Search, ArrowLeft, User } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import ViewNoteModal from "@/components/dashboard/ViewNoteModal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-interface Profile {
-  full_name: string | null;
-  avatar_url: string | null;
-}
-
-interface Note {
-  id: string;
-  title: string;
-  description: string | null;
-  subject: string | null;
-  university: string | null;
-  content: string | null;
-  file_type?: string | null;
-  file_url?: string | null;
-  user_id: string;
-  created_at: string;
-  profile: Profile;
-}
+import SearchFilters from "@/components/dashboard/notes/SearchFilters";
+import NoteList from "@/components/dashboard/notes/NoteList";
+import { Note } from "@/types/notes";
 
 const Notes = () => {
   const navigate = useNavigate();
@@ -62,10 +42,9 @@ const Notes = () => {
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       
-      // Transform the data to match our Note interface
       return (data as any[]).map(note => ({
         ...note,
-        profile: note.profile[0] // Take the first profile since it's returned as an array
+        profile: note.profile[0]
       })) as Note[];
     },
   });
@@ -101,16 +80,6 @@ const Notes = () => {
     setSelectedNote(note);
   };
 
-  const handleProfileClick = (e: React.MouseEvent, userId: string) => {
-    e.stopPropagation();
-    navigate(`/dashboard/profile/${userId}`);
-  };
-
-  const handleUniversityClick = (e: React.MouseEvent, university: string) => {
-    e.stopPropagation();
-    navigate(`/dashboard/notes?university=${encodeURIComponent(university)}`);
-  };
-
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center gap-4 mb-6">
@@ -124,101 +93,22 @@ const Notes = () => {
         <h1 className="text-2xl font-bold">Notes</h1>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <SelectValue placeholder="Select subject" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All subjects</SelectItem>
-            {subjects.map((subject) => (
-              <SelectItem key={subject} value={subject || "undefined"}>
-                {subject}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <SelectValue placeholder="Select university" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All universities</SelectItem>
-            {universities.map((university) => (
-              <SelectItem key={university} value={university || "undefined"}>
-                {university}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <SearchFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedSubject={selectedSubject}
+        onSubjectChange={setSelectedSubject}
+        selectedUniversity={selectedUniversity}
+        onUniversityChange={setSelectedUniversity}
+        subjects={subjects}
+        universities={universities}
+      />
 
       {isLoading ? (
-        <div className="text-center">Loading...</div>
+        <div className="text-center py-12">Loading...</div>
       ) : notes.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-          {notes.map((note) => (
-            <Card
-              key={note.id}
-              className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => handleNoteClick(note)}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex-1">
-                  <h3 className="font-medium">{note.title}</h3>
-                  {note.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {note.description}
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-2">
-                    {note.subject && (
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                        {note.subject}
-                      </span>
-                    )}
-                    {note.university && (
-                      <span 
-                        className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full cursor-pointer hover:bg-secondary/20"
-                        onClick={(e) => handleUniversityClick(e, note.university!)}
-                      >
-                        {note.university}
-                      </span>
-                    )}
-                  </div>
-                  <div 
-                    className="flex items-center gap-2 mt-4 cursor-pointer hover:opacity-80"
-                    onClick={(e) => handleProfileClick(e, note.user_id)}
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage 
-                        src={note.profile?.avatar_url || undefined}
-                        alt={note.profile?.full_name || "User"}
-                      />
-                      <AvatarFallback>
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium hover:underline">
-                      {note.profile?.full_name || "Anonymous"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {new Date(note.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
+        <div className="mt-6">
+          <NoteList notes={notes} onNoteClick={handleNoteClick} />
         </div>
       ) : (
         <div className="text-center text-muted-foreground py-12">
