@@ -105,12 +105,13 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-3/5 bg-primary/5">
-        <div className="w-full h-full relative">
+        <div className="w-full h-full relative flex items-center justify-center p-12">
           <img
             src="/lovable-uploads/2651af33-462f-42d5-b1cc-e6a55e16764d.png"
             alt="Student studying with laptop and books"
-            className="absolute inset-0 w-full h-full object-contain p-8"
-            style={{ imageRendering: 'crisp-edges' }}
+            className="max-w-full max-h-full object-contain"
+            loading="eager"
+            fetchPriority="high"
           />
         </div>
       </div>
@@ -128,6 +129,8 @@ const Auth = () => {
                   colors: {
                     brand: 'rgb(126, 105, 171)',
                     brandAccent: 'rgb(110, 89, 165)',
+                    inputText: 'white',
+                    inputBackground: 'transparent',
                   },
                 },
               },
@@ -136,7 +139,7 @@ const Auth = () => {
                 button: 'w-full px-4 py-2 rounded-md',
                 message: 'text-sm text-red-500',
                 label: 'text-foreground',
-                input: 'text-foreground',
+                input: 'text-foreground caret-white bg-muted',
                 anchor: 'text-primary hover:text-primary/80',
               },
             }}

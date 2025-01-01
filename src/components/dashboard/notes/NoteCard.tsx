@@ -22,7 +22,7 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
 
   const handleProfileClick = (e: React.MouseEvent, userId: string) => {
     e.stopPropagation();
-    console.log("Navigating to profile:", userId); // Debug log
+    console.log("Navigating to profile:", userId);
     navigate(`/dashboard/profile/${userId}`);
   };
 
@@ -38,6 +38,8 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
               src={note.preview_image}
               alt={note.title}
               className="object-cover w-full h-full"
+              loading="lazy"
+              decoding="async"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = "/placeholder.svg";
@@ -80,6 +82,7 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
                 <AvatarImage 
                   src={note.profile?.avatar_url || undefined} 
                   alt={note.profile?.full_name || "User"}
+                  loading="lazy"
                 />
                 <AvatarFallback>
                   <User className="h-4 w-4" />
