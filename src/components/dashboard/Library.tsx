@@ -52,7 +52,7 @@ const Library = () => {
             full_name: item.notes.profiles.full_name,
             avatar_url: item.notes.profiles.avatar_url
           } : null
-        })) as Note[];
+        }));
         setNotes(formattedNotes);
       }
     };
