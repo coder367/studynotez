@@ -29,6 +29,7 @@ interface NoteContainerProps {
   onShare: () => void;
   onChat: () => void;
   onFollow: () => void;
+  onClose: () => void;  // Added this prop
 }
 
 export const NoteContainer: FC<NoteContainerProps> = ({
@@ -44,6 +45,7 @@ export const NoteContainer: FC<NoteContainerProps> = ({
   onShare,
   onChat,
   onFollow,
+  onClose,  // Added this prop
 }) => {
   return (
     <div className="flex-1 min-h-0 flex">
@@ -55,6 +57,7 @@ export const NoteContainer: FC<NoteContainerProps> = ({
           university={note.university}
           fileUrl={note.file_url}
           onDownload={onDownload}
+          onClose={onClose}  // Pass the prop to NoteHeader
         />
         <NoteViewer fileUrl={note.file_url} title={note.title} />
       </div>

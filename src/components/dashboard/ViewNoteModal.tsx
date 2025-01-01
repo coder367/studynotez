@@ -234,6 +234,7 @@ const ViewNoteModal = ({ isOpen, onClose, note }: ViewNoteModalProps) => {
           onShare={handleShare}
           onChat={handleChat}
           onFollow={handleFollow}
+          onClose={onClose}  // Pass the onClose prop
         />
       </DialogContent>
     </Dialog>
