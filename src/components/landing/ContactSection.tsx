@@ -42,21 +42,17 @@ const ContactSection = () => {
   return (
     <section id="contact-section" className="py-16 px-4 sm:px-6 lg:px-8 bg-background/50">
       <div className="max-w-7xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-12 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Contact Us
+        </h2>
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Contact Us
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Have questions or feedback? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-            </p>
-            <div className="hidden lg:block">
-              <img 
-                src="/lovable-uploads/ab2a1dac-d67b-436f-93c3-aaf8a4d3b0f6.png" 
-                alt="Contact illustration" 
-                className="w-full max-w-md mx-auto rounded-lg shadow-xl transform hover:scale-105 transition-transform duration-300"
-              />
-            </div>
+          <div className="hidden lg:flex justify-center items-center">
+            <img 
+              src="/lovable-uploads/ab2a1dac-d67b-436f-93c3-aaf8a4d3b0f6.png" 
+              alt="Contact illustration" 
+              className="w-full max-w-md rounded-lg shadow-xl transform hover:scale-105 transition-transform duration-300 object-contain"
+            />
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6 glass-card p-8 rounded-xl">
