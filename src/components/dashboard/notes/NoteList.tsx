@@ -12,6 +12,7 @@ const NoteList = ({ notes, onNoteClick }: NoteListProps) => {
 
   const handleMessageClick = (e: React.MouseEvent, userId: string) => {
     e.stopPropagation();
+    console.log("Navigating to chat:", userId); // Debug log
     navigate(`/dashboard/chat/${userId}`);
   };
 

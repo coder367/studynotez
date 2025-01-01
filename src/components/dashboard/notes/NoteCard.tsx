@@ -22,6 +22,7 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
 
   const handleProfileClick = (e: React.MouseEvent, userId: string) => {
     e.stopPropagation();
+    console.log("Navigating to profile:", userId); // Debug log
     navigate(`/dashboard/profile/${userId}`);
   };
 
@@ -71,8 +72,8 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
             )}
           </div>
           <div className="flex items-center justify-between mt-4 pt-4 border-t">
-            <div 
-              className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+            <button 
+              className="flex items-center gap-2 hover:opacity-80 focus:outline-none"
               onClick={(e) => handleProfileClick(e, note.user_id)}
             >
               <Avatar className="h-8 w-8">
@@ -87,7 +88,7 @@ const NoteCard = ({ note, onNoteClick, onMessageClick }: NoteCardProps) => {
               <span className="text-sm font-medium hover:underline">
                 {note.profile?.full_name || "Anonymous"}
               </span>
-            </div>
+            </button>
             <Button
               variant="ghost"
               size="icon"
